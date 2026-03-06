@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "289836715820",
+    "firebase_url": "https://notes-2b1c3-default-rtdb.firebaseio.com",
+    "project_id": "notes-2b1c3",
+    "storage_bucket": "notes-2b1c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289836715820:android:57e3914a0029c104306689",
+        "android_client_info": {
+          "package_name": "com.white.notepilot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "289836715820-n4ii18dph7a7vkkmho6s2832dcv0raoa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3-zMjPIyY_qXeZoaV_Z6HESJK7WLNxWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "289836715820-n4ii18dph7a7vkkmho6s2832dcv0raoa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
