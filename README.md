@@ -448,7 +448,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Hemal Katariya**
 - GitHub: [@hemukatariya](https://github.com/AnshuHemal)
-- Email: connect.hemal@example.com
+- Email: connect.hemal@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -460,7 +460,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Support
 
-For support, email connect.hemal@example.com or open an issue in the GitHub repository.
+For support, email connect.hemal@gmail.com or open an issue in the GitHub repository.
 
 ## 🔄 Version History
 
