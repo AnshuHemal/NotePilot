@@ -60,11 +60,15 @@ fun FilterBottomSheet(
     currentSortOrder: SortOrder,
     onSortOrderChange: (SortOrder) -> Unit,
     selectedDate: Long? = null,
-    onDateSelected: (Long?) -> Unit
+    onDateSelected: (Long?) -> Unit,
+    selectedCategoryIds: List<Int> = emptyList(),
+    onCategoriesSelected: (List<Int>) -> Unit,
+    categories: List<com.white.notepilot.data.model.Category> = emptyList()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedSortOrder by remember { mutableStateOf(currentSortOrder) }
     var tempSelectedDate by remember { mutableStateOf(selectedDate) }
+    var tempSelectedCategoryIds by remember { mutableStateOf(selectedCategoryIds) }
     var showDatePicker by remember { mutableStateOf(false) }
     
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -253,6 +257,80 @@ fun FilterBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(Dimens.PaddingLarge))
+            
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = Dimens.PaddingSmall),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            )
+            
+            Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
+            
+            Text(
+                text = "Filter by Category",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = Dimens.PaddingSmall)
+            )
+            
+            if (categories.isEmpty()) {
+                Text(
+                    text = "No categories available",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categories.chunked(2).forEach { rowCategories ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowCategories.forEach { category ->
+                                CategoryChip(
+                                    category = category,
+                                    isSelected = tempSelectedCategoryIds.contains(category.id),
+                                    onClick = {
+                                        tempSelectedCategoryIds = if (tempSelectedCategoryIds.contains(category.id)) {
+                                            emptyList()
+                                        } else {
+                                            listOf(category.id)
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (rowCategories.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+                
+                if (tempSelectedCategoryIds.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
+                    
+                    OutlinedButton(
+                        onClick = { tempSelectedCategoryIds = emptyList() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(Dimens.PaddingMedium)
+                    ) {
+                        Text(
+                            text = "Clear Category Filter",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.PaddingLarge))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -262,6 +340,7 @@ fun FilterBottomSheet(
                     onClick = {
                         selectedSortOrder = SortOrder.DESCENDING
                         tempSelectedDate = null
+                        tempSelectedCategoryIds = emptyList()
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
@@ -281,6 +360,7 @@ fun FilterBottomSheet(
                     onClick = {
                         onSortOrderChange(selectedSortOrder)
                         onDateSelected(tempSelectedDate)
+                        onCategoriesSelected(tempSelectedCategoryIds)
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f),

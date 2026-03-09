@@ -112,7 +112,6 @@ fun AccountScreen(
                 message = "Are you sure you want to logout?",
                 negativeButtonText = "Cancel",
                 positiveButtonText = "Logout",
-                onDismiss = { showLogoutDialog = false },
                 onNegativeClick = {
                     showLogoutDialog = false
                 },

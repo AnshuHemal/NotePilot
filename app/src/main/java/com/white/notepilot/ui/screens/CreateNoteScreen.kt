@@ -1,13 +1,14 @@
 package com.white.notepilot.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -22,10 +23,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -49,27 +52,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import com.white.notepilot.R
 import com.white.notepilot.data.model.Category
 import com.white.notepilot.data.model.Note
+import com.white.notepilot.data.model.NoteImage
 import com.white.notepilot.ui.components.CategoryChip
 import com.white.notepilot.ui.components.CategorySelectionBottomSheet
 import com.white.notepilot.ui.components.CustomPopupDialog
 import com.white.notepilot.ui.components.CustomSnackbar
 import com.white.notepilot.ui.components.CustomTopBar
+import com.white.notepilot.ui.components.ImageAttachmentRow
+import com.white.notepilot.ui.components.ImageViewerDialog
 import com.white.notepilot.ui.events.NotesEvent
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.LightGray
-import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.utils.ColorUtils
 import com.white.notepilot.viewmodel.NotesViewModel
 import kotlinx.coroutines.launch
@@ -105,24 +108,33 @@ fun CreateNoteScreen(
         navController = navController,
         existingNote = existingNote,
         existingCategoryIds = existingCategoryIds,
+        existingImages = uiState.noteImages,
         syncMessage = syncMessage,
         categories = categories,
-        onSaveNote = { note, selectedCategoryIds, callback ->
+        onSaveNote = { note, selectedCategoryIds, selectedImageUris, callback ->
             scope.launch {
                 val userId = authViewModel.getCurrentUser()?.uid
-                val success = if (!userId.isNullOrBlank()) {
+                val (success, savedNoteId, noteFirebaseId) = if (!userId.isNullOrBlank()) {
                     viewModel.saveNoteAndWait(note, userId)
                 } else {
                     viewModel.saveNoteAndWait(note, "")
                 }
                 
-                if (success && note.id > 0) {
-                    // Update categories after note is saved
-                    categoryViewModel.updateNoteCategories(note.id, selectedCategoryIds)
+                if (success && savedNoteId > 0) {
+                    categoryViewModel.updateNoteCategories(savedNoteId, selectedCategoryIds, noteFirebaseId)
+                    
+                    if (selectedImageUris.isNotEmpty()) {
+                        android.util.Log.d("CreateNoteScreen", "Saving ${selectedImageUris.size} images...")
+                        val syncedCount = viewModel.saveImagesForNote(savedNoteId, noteFirebaseId, selectedImageUris)
+                        android.util.Log.d("CreateNoteScreen", "Images saved: $syncedCount/${selectedImageUris.size} synced")
+                    }
                 }
                 
                 callback(success)
             }
+        },
+        onDeleteImage = { image ->
+            viewModel.deleteImage(image)
         },
         onClearSyncMessage = {
             viewModel.clearSyncMessage()
@@ -133,22 +145,26 @@ fun CreateNoteScreen(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CreateNoteScreenContent(
     navController: NavHostController,
     existingNote: Note?,
     existingCategoryIds: List<Int>,
+    existingImages: List<NoteImage>,
     syncMessage: String?,
     categories: List<Category>,
-    onSaveNote: (Note, List<Int>, (Boolean) -> Unit) -> Unit,
+    onSaveNote: (Note, List<Int>, List<Uri>, (Boolean) -> Unit) -> Unit,
+    onDeleteImage: (NoteImage) -> Unit,
     onClearSyncMessage: () -> Unit,
     onManageCategories: () -> Unit
 ) {
     var title by remember(existingNote) { mutableStateOf(existingNote?.title ?: "") }
     val richTextState = rememberRichTextState()
     var selectedCategoryIds by remember(existingCategoryIds) { mutableStateOf(existingCategoryIds) }
+    var selectedImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var imageToView by remember { mutableStateOf<NoteImage?>(null) }
+    val scope = rememberCoroutineScope()
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -158,6 +174,15 @@ private fun CreateNoteScreenContent(
     var snackbarMessageRes by remember { mutableIntStateOf(R.string.please_fill_in_both_title_and_content) }
     var useStringResource by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
+    
+    // Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            selectedImageUris = selectedImageUris + uris
+        }
+    }
     
     LaunchedEffect(existingNote) {
         existingNote?.content?.let { content ->
@@ -177,9 +202,9 @@ private fun CreateNoteScreenContent(
     val isEditMode = existingNote != null
     val contentText = richTextState.annotatedString.text
     val hasChanges = if (isEditMode) {
-        title != existingNote.title || contentText != existingNote.content
+        title != existingNote.title || contentText != existingNote.content || selectedImageUris.isNotEmpty()
     } else {
-        title.isNotBlank() || contentText.isNotBlank()
+        title.isNotBlank() || contentText.isNotBlank() || selectedImageUris.isNotEmpty()
     }
 
     BackHandler {
@@ -206,6 +231,22 @@ private fun CreateNoteScreenContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Image attachment button
+                        IconButton(
+                            onClick = { imagePickerLauncher.launch("image/*") },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.add),
+                                contentDescription = "Add Images",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
                         // Category button
                         IconButton(
                             onClick = { showCategorySheet = true },
@@ -254,7 +295,7 @@ private fun CreateNoteScreenContent(
                                             content = content,
                                             colorCode = ColorUtils.generateRandomColorCode()
                                         )
-                                        onSaveNote(note, selectedCategoryIds) { success ->
+                                        onSaveNote(note, selectedCategoryIds, selectedImageUris) { success ->
                                             isSaving = false
                                             if (success) {
                                                 navController.popBackStack()
@@ -266,14 +307,23 @@ private fun CreateNoteScreenContent(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+                            enabled = !isSaving
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.save),
-                                contentDescription = "Save",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (isSaving) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.save),
+                                    contentDescription = "Save",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -322,20 +372,98 @@ private fun CreateNoteScreenContent(
                 
                 // Category chips
                 if (selectedCategoryIds.isNotEmpty()) {
-                    FlowRow(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        categories.filter { it.id in selectedCategoryIds }.forEach { category ->
-                            CategoryChip(
-                                category = category,
-                                showRemoveIcon = true,
-                                onRemove = {
-                                    selectedCategoryIds = selectedCategoryIds - category.id
+                        categories.filter { it.id in selectedCategoryIds }.chunked(3).forEach { rowCategories ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowCategories.forEach { category ->
+                                    CategoryChip(
+                                        category = category,
+                                        showRemoveIcon = true,
+                                        onRemove = {
+                                            selectedCategoryIds = selectedCategoryIds - category.id
+                                        }
+                                    )
                                 }
-                            )
+                            }
+                        }
+                    }
+                }
+                
+                // Image attachments - show existing images
+                if (existingImages.isNotEmpty()) {
+                    ImageAttachmentRow(
+                        images = existingImages,
+                        onImageClick = { image -> imageToView = image },
+                        onRemoveImage = { image ->
+                            onDeleteImage(image)
+                        }
+                    )
+                }
+                
+                // Image attachments - show newly selected images (preview)
+                if (selectedImageUris.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Dimens.PaddingLarge, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "New Images (${selectedImageUris.size})",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            selectedImageUris.forEach { uri ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    coil.compose.AsyncImage(
+                                        model = uri,
+                                        contentDescription = "Selected image",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    )
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            selectedImageUris = selectedImageUris - uri
+                                        },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.6f))
+                                    ) {
+                                        Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                            contentDescription = "Remove",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -379,7 +507,6 @@ private fun CreateNoteScreenContent(
                     message = stringResource(R.string.save_changes),
                     negativeButtonText = stringResource(R.string.discard),
                     positiveButtonText = stringResource(R.string.save),
-                    onDismiss = { showSaveDialog = false },
                     onNegativeClick = {
                         showSaveDialog = false
                     },
@@ -391,7 +518,7 @@ private fun CreateNoteScreenContent(
                             content = richTextState.toHtml(),
                             timestamp = System.currentTimeMillis()
                         )
-                        onSaveNote(updatedNote, selectedCategoryIds) { success ->
+                        onSaveNote(updatedNote, selectedCategoryIds, selectedImageUris) { success ->
                             isSaving = false
                             if (success) {
                                 navController.popBackStack()
@@ -422,7 +549,6 @@ private fun CreateNoteScreenContent(
                     message = stringResource(R.string.are_your_sure_you_want_discard_your_changes),
                     negativeButtonText = stringResource(R.string.discard),
                     positiveButtonText = stringResource(R.string.keep),
-                    onDismiss = { showDiscardDialog = false },
                     onNegativeClick = {
                         showDiscardDialog = false
                         navController.popBackStack()
@@ -480,24 +606,15 @@ private fun CreateNoteScreenContent(
                     }
                 }
             }
+            
+            // Image Viewer Dialog
+            imageToView?.let { image ->
+                ImageViewerDialog(
+                    image = image,
+                    onDismiss = { imageToView = null }
+                )
+            }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CreateNoteScreenPreview() {
-    NotesTheme {
-        CreateNoteScreenContent(
-            navController = rememberNavController(),
-            existingNote = null,
-            existingCategoryIds = emptyList(),
-            syncMessage = null,
-            categories = emptyList(),
-            onSaveNote = { _, _, callback -> callback(true) },
-            onClearSyncMessage = {},
-            onManageCategories = {}
-        )
     }
 }
 

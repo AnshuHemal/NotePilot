@@ -67,7 +67,21 @@ fun HomeScreen(
     val context = LocalContext.current
     val backgroundSyncEnabled by notificationPreferences.backgroundSyncEnabled.collectAsState(initial = true)
     
-    // Monitor network connectivity and sync unsynced notes when online (if background sync is enabled)
+    // Sync categories when user is logged in
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { userId ->
+            val firebaseRepository = com.white.notepilot.data.repository.FirebaseRepository(
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            )
+            
+            // Sync local categories to Firebase
+            categoryViewModel.syncCategoriesToFirebase(userId, firebaseRepository)
+            
+            // Fetch categories from Firebase
+            categoryViewModel.fetchCategoriesFromFirebase(userId, firebaseRepository)
+        }
+    }
+    
     LaunchedEffect(currentUser?.uid, backgroundSyncEnabled) {
         currentUser?.uid?.let { userId ->
             if (backgroundSyncEnabled) {
@@ -81,7 +95,6 @@ fun HomeScreen(
                 
                 connectivityManager.registerDefaultNetworkCallback(networkCallback)
                 
-                // Cleanup: Unregister callback when composable leaves composition
                 kotlinx.coroutines.coroutineScope {
                     try {
                         kotlinx.coroutines.awaitCancellation()
@@ -203,6 +216,10 @@ private fun HomeScreenContent(
                             imageRes = R.drawable.unsynced_note,
                             onClick = { navController.navigate(Routes.UnsyncedNotes.route) }
                         )
+                        RoundedImageCard(
+                            imageRes = R.drawable.sync,
+                            onClick = { navController.navigate(Routes.ImageSyncTest.route) }
+                        )
                     }
                 }
 
@@ -231,6 +248,8 @@ private fun HomeScreenContent(
             }
 
             if (showFilterBottomSheet) {
+                val categories by categoryViewModel.categories.collectAsState()
+                
                 FilterBottomSheet(
                     onDismiss = { showFilterBottomSheet = false },
                     currentSortOrder = uiState.sortOrder,
@@ -240,7 +259,12 @@ private fun HomeScreenContent(
                     selectedDate = uiState.selectedDate,
                     onDateSelected = { date ->
                         onEvent(NotesEvent.UpdateSelectedDate(date))
-                    }
+                    },
+                    selectedCategoryIds = uiState.selectedCategoryIds,
+                    onCategoriesSelected = { categoryIds ->
+                        onEvent(NotesEvent.UpdateSelectedCategories(categoryIds))
+                    },
+                    categories = categories
                 )
             }
             
@@ -328,16 +352,33 @@ private fun NotesListContent(
             items = notes,
             key = { note -> note.id }
         ) { note ->
-            val categories by categoryViewModel.getCategoriesForNote(note.id).collectAsState()
-            
-            SwipeToDeleteNoteItem(
+            NoteItemWithCategories(
                 note = note,
-                categories = categories,
+                categoryViewModel = categoryViewModel,
                 onNoteClick = { onNoteClick(note) },
                 onNoteDelete = { onNoteDelete(note) }
             )
         }
     }
+}
+
+@Composable
+private fun NoteItemWithCategories(
+    note: Note,
+    categoryViewModel: com.white.notepilot.viewmodel.CategoryViewModel,
+    onNoteClick: () -> Unit,
+    onNoteDelete: () -> Unit
+) {
+    val categories by remember(note.id) {
+        categoryViewModel.getCategoriesForNote(note.id)
+    }.collectAsState(initial = emptyList())
+    
+    SwipeToDeleteNoteItem(
+        note = note,
+        categories = categories,
+        onNoteClick = onNoteClick,
+        onNoteDelete = onNoteDelete
+    )
 }
 
 @Preview(showBackground = true)

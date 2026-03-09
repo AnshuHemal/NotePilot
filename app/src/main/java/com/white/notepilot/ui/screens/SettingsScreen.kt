@@ -173,9 +173,6 @@ fun SettingsScreen(
                 message = "Are you sure you want to disable notifications? You won't receive updates about your notes.",
                 negativeButtonText = "Cancel",
                 positiveButtonText = "Disable",
-                onDismiss = {
-                    showDisableDialog = false
-                },
                 onNegativeClick = {
                     showDisableDialog = false
                 },
@@ -193,9 +190,6 @@ fun SettingsScreen(
                 message = "Notification permission is required. Please enable it in app settings to receive notifications.",
                 negativeButtonText = "Cancel",
                 positiveButtonText = "Open Settings",
-                onDismiss = {
-                    showPermissionDeniedDialog = false
-                },
                 onNegativeClick = {
                     showPermissionDeniedDialog = false
                 },

@@ -1,8 +1,11 @@
 package com.white.notepilot.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.white.notepilot.data.model.Note
+import com.white.notepilot.data.model.NoteImage
+import com.white.notepilot.data.repository.ImageRepository
 import com.white.notepilot.data.repository.NoteRepository
 import com.white.notepilot.enums.SortOrder
 import com.white.notepilot.ui.events.NotesEvent
@@ -16,17 +19,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    private val repository: NoteRepository
+    private val repository: NoteRepository,
+    private val categoryRepository: com.white.notepilot.data.repository.CategoryRepository,
+    val imageRepository: ImageRepository
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(SortOrder.DESCENDING)
     private val _searchQuery = MutableStateFlow("")
     private val _selectedDate = MutableStateFlow<Long?>(null)
+    private val _selectedCategoryIds = MutableStateFlow<List<Int>>(emptyList())
     private val _selectedNote = MutableStateFlow<Note?>(null)
+    private val _noteImages = MutableStateFlow<List<NoteImage>>(emptyList())
     private val _isSyncing = MutableStateFlow(false)
     private val _syncError = MutableStateFlow<String?>(null)
     private val _syncMessage = MutableStateFlow<String?>(null)
@@ -45,8 +53,9 @@ class NotesViewModel @Inject constructor(
         notesFlow,
         _sortOrder,
         _searchQuery,
-        _selectedDate
-    ) { notesList, order, query, selectedDate ->
+        _selectedDate,
+        _selectedCategoryIds
+    ) { notesList, order, query, selectedDate, selectedCategoryIds ->
         val filtered = if (query.isBlank()) {
             notesList
         } else {
@@ -63,10 +72,20 @@ class NotesViewModel @Inject constructor(
         } else {
             filtered
         }
+        
+        val categoryFiltered = if (selectedCategoryIds.isNotEmpty()) {
+            dateFiltered.filter { note ->
+                val noteCategories = categoryRepository.getCategoriesForNoteSync(note.id)
+                val noteCategoryIds = noteCategories.map { it.id }
+                selectedCategoryIds.any { it in noteCategoryIds }
+            }
+        } else {
+            dateFiltered
+        }
 
         when (order) {
-            SortOrder.ASCENDING -> dateFiltered.sortedBy { it.timestamp }
-            SortOrder.DESCENDING -> dateFiltered.sortedByDescending { it.timestamp }
+            SortOrder.ASCENDING -> categoryFiltered.sortedBy { it.timestamp }
+            SortOrder.DESCENDING -> categoryFiltered.sortedByDescending { it.timestamp }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -78,9 +97,14 @@ class NotesViewModel @Inject constructor(
         processedNotes,
         _sortOrder,
         _searchQuery,
-        _selectedNote,
-        _selectedDate
-    ) { notes, sortOrder, searchQuery, selectedNote, selectedDate ->
+        _selectedNote
+    ) { notes, sortOrder, searchQuery, selectedNote ->
+        Triple(notes, sortOrder, searchQuery) to selectedNote
+    }.combine(_selectedDate) { (triple, selectedNote), selectedDate ->
+        Pair(triple, selectedNote) to selectedDate
+    }.combine(_selectedCategoryIds) { (pair, selectedDate), selectedCategoryIds ->
+        val (triple, selectedNote) = pair
+        val (notes, sortOrder, searchQuery) = triple
         NotesUiState(
             notes = notes,
             sortOrder = sortOrder,
@@ -88,8 +112,11 @@ class NotesViewModel @Inject constructor(
             isLoading = false,
             isEmpty = notes.isEmpty(),
             selectedNote = selectedNote,
-            selectedDate = selectedDate
+            selectedDate = selectedDate,
+            selectedCategoryIds = selectedCategoryIds
         )
+    }.combine(_noteImages) { state, images ->
+        state.copy(noteImages = images)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -110,6 +137,10 @@ class NotesViewModel @Inject constructor(
             
             is NotesEvent.UpdateSelectedDate -> {
                 _selectedDate.value = event.date
+            }
+            
+            is NotesEvent.UpdateSelectedCategories -> {
+                _selectedCategoryIds.value = event.categoryIds
             }
 
             is NotesEvent.UpsertNote -> {
@@ -150,27 +181,73 @@ class NotesViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     val note = repository.getNoteById(event.noteId)
                     _selectedNote.value = note
+                    if (note != null) {
+                        val images = imageRepository.getImagesForNoteSync(note.id)
+                        _noteImages.value = images
+                    } else {
+                        _noteImages.value = emptyList()
+                    }
                 }
             }
         }
     }
 
-    suspend fun saveNoteAndWait(note: Note, userId: String): Boolean {
+    suspend fun saveNoteAndWait(note: Note, userId: String): Triple<Boolean, Int, String?> {
         return try {
             val result = repository.upsertNote(note, userId)
             if (result.isFailure) {
                 _syncError.value = "Note saved locally. Will sync when online."
-                true
+                Triple(true, note.id, note.noteId)
             } else {
                 val syncedNote = result.getOrNull()
                 if (syncedNote?.isSynced == false) {
                     _syncMessage.value = "Note saved locally. Will sync when online."
                 }
-                true
+                Triple(true, syncedNote?.id ?: note.id, syncedNote?.noteId)
             }
         } catch (e: Exception) {
             _syncError.value = e.message
-            false
+            Triple(false, 0, null)
+        }
+    }
+    
+    suspend fun saveImagesForNote(noteId: Int, noteFirebaseId: String?, imageUris: List<Uri>): Int {
+        return withContext(Dispatchers.IO) {
+            var syncedCount = 0
+            imageUris.forEach { uri ->
+                android.util.Log.d("NotesViewModel", "Saving image for note $noteId")
+                val result = imageRepository.saveImageForNote(noteId, noteFirebaseId, uri)
+                if (result.isSuccess) {
+                    val image = result.getOrNull()
+                    if (image?.isSynced == true) {
+                        syncedCount++
+                        android.util.Log.d("NotesViewModel", "Image synced successfully")
+                    } else {
+                        android.util.Log.d("NotesViewModel", "Image saved locally, sync pending")
+                    }
+                } else {
+                    android.util.Log.e("NotesViewModel", "Failed to save image: ${result.exceptionOrNull()?.message}")
+                }
+            }
+            val images = imageRepository.getImagesForNoteSync(noteId)
+            _noteImages.value = images
+            
+            if (syncedCount < imageUris.size) {
+                _syncMessage.value = "Images saved. ${imageUris.size - syncedCount} pending sync."
+            } else {
+                _syncMessage.value = "All images synced successfully!"
+            }
+            
+            syncedCount
+        }
+    }
+    
+    fun deleteImage(image: NoteImage) {
+        viewModelScope.launch(Dispatchers.IO) {
+            imageRepository.deleteImage(image)
+            // Refresh images in UI state
+            val images = imageRepository.getImagesForNoteSync(image.noteId)
+            _noteImages.value = images
         }
     }
     

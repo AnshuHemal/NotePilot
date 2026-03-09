@@ -14,7 +14,7 @@ class Converters {
     fun toNotificationType(value: String): NotificationType {
         return try {
             NotificationType.valueOf(value)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             NotificationType.GENERAL
         }
     }

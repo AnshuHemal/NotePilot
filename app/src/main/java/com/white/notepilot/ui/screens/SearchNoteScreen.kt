@@ -263,16 +263,33 @@ private fun SearchResultsContent(
             items = notes,
             key = { note -> note.id }
         ) { note ->
-            val categories by categoryViewModel.getCategoriesForNote(note.id).collectAsState()
-            
-            SwipeToDeleteNoteItem(
+            SearchNoteItemWithCategories(
                 note = note,
-                categories = categories,
-                onNoteClick = {onNoteClick(note)},
-                onNoteDelete = {onNoteDelete(note)}
+                categoryViewModel = categoryViewModel,
+                onNoteClick = { onNoteClick(note) },
+                onNoteDelete = { onNoteDelete(note) }
             )
         }
     }
+}
+
+@Composable
+private fun SearchNoteItemWithCategories(
+    note: Note,
+    categoryViewModel: CategoryViewModel,
+    onNoteClick: () -> Unit,
+    onNoteDelete: () -> Unit
+) {
+    val categories by remember(note.id) {
+        categoryViewModel.getCategoriesForNote(note.id)
+    }.collectAsState(initial = emptyList())
+    
+    SwipeToDeleteNoteItem(
+        note = note,
+        categories = categories,
+        onNoteClick = onNoteClick,
+        onNoteDelete = onNoteDelete
+    )
 }
 //
 //@Preview(showBackground = true)

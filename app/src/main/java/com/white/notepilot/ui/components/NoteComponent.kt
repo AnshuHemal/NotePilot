@@ -2,8 +2,7 @@ package com.white.notepilot.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -24,7 +24,6 @@ import com.white.notepilot.data.model.Category
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.utils.ColorUtils
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NoteComponent(
     title: String,
@@ -69,26 +68,33 @@ fun NoteComponent(
                 overflow = TextOverflow.Ellipsis
             )
             
+            // Always show category section if categories exist
             if (categories.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 
-                FlowRow(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Show up to 3 categories
                     categories.take(3).forEach { category ->
                         CategoryChip(
                             category = category,
-                            modifier = Modifier
+                            modifier = Modifier,
+                            isSelected = false,
+                            showRemoveIcon = false
                         )
                     }
                     
+                    // Show "+N" indicator if there are more than 3 categories
                     if (categories.size > 3) {
                         Text(
                             text = "+${categories.size - 3}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = textColor.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = textColor.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                         )
                     }
                 }

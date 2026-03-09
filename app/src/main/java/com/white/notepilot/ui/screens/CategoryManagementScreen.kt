@@ -1,7 +1,9 @@
 package com.white.notepilot.ui.screens
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,8 +31,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,36 +50,59 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.google.firebase.firestore.FirebaseFirestore
 import com.white.notepilot.R
 import com.white.notepilot.data.model.Category
+import com.white.notepilot.data.repository.FirebaseRepository
+import com.white.notepilot.ui.components.AddCategoryDialog
 import com.white.notepilot.ui.components.CustomPopupDialog
+import com.white.notepilot.ui.components.CustomSnackbar
 import com.white.notepilot.ui.components.CustomTopBar
 import com.white.notepilot.ui.theme.Blue
 import com.white.notepilot.ui.theme.Dimens
+import com.white.notepilot.viewmodel.AuthViewModel
 import com.white.notepilot.viewmodel.CategoryViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun CategoryManagementScreen(
     navController: NavHostController,
-    viewModel: CategoryViewModel = hiltViewModel()
+    viewModel: CategoryViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var categoryToDelete by remember { mutableStateOf<Category?>(null) }
+    var showNoInternetDialog by remember { mutableStateOf(false) }
+    var showSnackbar by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    
+    fun isInternetAvailable(): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
     
     Scaffold(
         topBar = {
             CustomTopBar(
-                title = "Manage Categories",
+                title = "Categories",
                 leftIconRes = R.drawable.back_arrow,
                 onLeftIconClick = { navController.popBackStack() }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = {
+                    if (isInternetAvailable()) {
+                        showAddDialog = true
+                    } else {
+                        showNoInternetDialog = true
+                    }
+                },
                 containerColor = Blue,
                 contentColor = Color.White
             ) {
@@ -117,36 +144,73 @@ fun CategoryManagementScreen(
                 }
                 
                 item {
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
         
-        // Add Category Dialog
         if (showAddDialog) {
             AddCategoryDialog(
                 onDismiss = { showAddDialog = false },
                 onAdd = { name, color, icon ->
                     scope.launch {
-                        val category = Category(
-                            name = name,
-                            color = color,
-                            icon = icon
-                        )
-                        viewModel.addCategory(category)
-                        showAddDialog = false
+                        val userId = authViewModel.getCurrentUser()?.uid
+                        if (userId != null) {
+                            val category = Category(
+                                name = name,
+                                color = color,
+                                icon = icon
+                            )
+                            viewModel.addCategory(category)
+                            
+                            val firebaseRepository = FirebaseRepository(
+                                FirebaseFirestore.getInstance()
+                            )
+                            viewModel.syncCategoriesToFirebase(userId, firebaseRepository)
+                            
+                            snackbarMessage = "Category \"$name\" added successfully"
+                            showSnackbar = true
+                            showAddDialog = false
+                        } else {
+                            snackbarMessage = "Please sign in to add categories"
+                            showSnackbar = true
+                        }
                     }
-                }
+                },
+                existingCategoryNames = categories.map { it.name }
             )
         }
         
-        // Delete Confirmation Dialog
+        if (showNoInternetDialog) {
+            CustomPopupDialog(
+                message = "Internet connection required to add categories. Please connect to the internet and try again.",
+                negativeButtonText = "Cancel",
+                positiveButtonText = "OK",
+                onNegativeClick = { showNoInternetDialog = false },
+                onPositiveClick = { showNoInternetDialog = false }
+            )
+        }
+        
+        if (showSnackbar) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 80.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackbar(
+                    message = snackbarMessage,
+                    isVisible = true,
+                    onDismiss = { showSnackbar = false }
+                )
+            }
+        }
+        
         categoryToDelete?.let { category ->
             CustomPopupDialog(
                 message = "Delete \"${category.name}\" category? Notes will not be deleted.",
                 negativeButtonText = "Cancel",
                 positiveButtonText = "Delete",
-                onDismiss = { categoryToDelete = null },
                 onNegativeClick = { categoryToDelete = null },
                 onPositiveClick = {
                     scope.launch {
@@ -166,10 +230,9 @@ private fun CategoryItemWithCount(
     onDelete: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var notesCount by remember { mutableStateOf(0) }
+    var notesCount by remember { mutableIntStateOf(0) }
     
-    // Fetch notes count for this category
-    androidx.compose.runtime.LaunchedEffect(category.id) {
+    LaunchedEffect(category.id) {
         scope.launch {
             notesCount = viewModel.getNotesCountForCategory(category.id)
         }
@@ -226,7 +289,6 @@ private fun CategoryItem(
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Name and count
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -245,7 +307,6 @@ private fun CategoryItem(
                 )
             }
             
-            // Delete button
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -300,23 +361,7 @@ private fun getCategoryIcon(iconName: String): Int {
         "star" -> R.drawable.star
         "checklist" -> R.drawable.checklist
         "label" -> R.drawable.label
-        else -> R.drawable.label
+        "category_label" -> R.drawable.category_label
+        else -> R.drawable.category_label
     }
-}
-
-@Composable
-private fun AddCategoryDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String, String, String) -> Unit
-) {
-    // TODO: Implement full add category dialog with name, color picker, and icon selector
-    // For now, using a simple implementation
-    CustomPopupDialog(
-        message = "Add Category feature - Full implementation coming soon",
-        negativeButtonText = "Cancel",
-        positiveButtonText = "OK",
-        onDismiss = onDismiss,
-        onNegativeClick = onDismiss,
-        onPositiveClick = onDismiss
-    )
 }

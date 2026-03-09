@@ -83,9 +83,33 @@ class CategoryViewModel @Inject constructor(
         return repository.getNotesCountForCategory(categoryId)
     }
     
-    fun updateNoteCategories(noteId: Int, categoryIds: List<Int>) {
+    fun updateNoteCategories(noteId: Int, categoryIds: List<Int>, noteFirebaseId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            val result = repository.updateNoteCategories(noteId, categoryIds)
+            val result = repository.updateNoteCategories(noteId, categoryIds, noteFirebaseId)
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message
+            }
+        }
+    }
+    
+    fun syncCategoriesToFirebase(
+        userId: String,
+        firebaseRepository: com.white.notepilot.data.repository.FirebaseRepository
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.syncCategoriesToFirebase(userId, firebaseRepository)
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message
+            }
+        }
+    }
+    
+    fun fetchCategoriesFromFirebase(
+        userId: String,
+        firebaseRepository: com.white.notepilot.data.repository.FirebaseRepository
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.fetchCategoriesFromFirebase(userId, firebaseRepository)
             if (result.isFailure) {
                 _errorMessage.value = result.exceptionOrNull()?.message
             }

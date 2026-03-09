@@ -93,9 +93,6 @@ fun SwipeToDeleteNoteItem(
             message = stringResource(R.string.delete_note),
             negativeButtonText = stringResource(R.string.cancel),
             positiveButtonText = stringResource(R.string.delete),
-            onDismiss = {
-                showDeleteDialog = false
-            },
             onNegativeClick = {
                 showDeleteDialog = false
             },

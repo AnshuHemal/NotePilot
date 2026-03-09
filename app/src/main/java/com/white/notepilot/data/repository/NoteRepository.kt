@@ -21,6 +21,7 @@ class NoteRepository @Inject constructor(
     private val networkUtils: NetworkUtils,
     private val notificationPreferences: NotificationPreferences,
     private val notificationRepository: NotificationRepository,
+    private val imageRepository: ImageRepository,
     @ApplicationContext private val context: Context
 ) {
     
@@ -151,6 +152,10 @@ class NoteRepository @Inject constructor(
 
     suspend fun permanentlyDeleteNote(note: Note, userId: String): Result<Unit> {
         return try {
+            android.util.Log.d("NoteRepository", "Permanently deleting note ${note.id} with images")
+            
+            imageRepository.deleteImagesForNote(note.id)
+            
             if (networkUtils.isNetworkAvailable() && note.noteId != null && userId.isNotBlank()) {
                 val deleteResult = firestoreRepository.deleteNoteFromFirestore(
                     firestoreId = note.noteId,
@@ -159,16 +164,20 @@ class NoteRepository @Inject constructor(
                 
                 if (deleteResult.isSuccess) {
                     noteDao.deleteNote(note)
+                    android.util.Log.d("NoteRepository", "Note and images deleted successfully")
                     return Result.success(Unit)
                 } else {
                     noteDao.deleteNote(note)
+                    android.util.Log.w("NoteRepository", "Firestore delete failed but local delete succeeded")
                     return Result.failure(deleteResult.exceptionOrNull() ?: Exception("Firestore delete failed"))
                 }
             } else {
                 noteDao.deleteNote(note)
+                android.util.Log.d("NoteRepository", "Note and images deleted locally (offline)")
                 return Result.success(Unit)
             }
         } catch (e: Exception) {
+            android.util.Log.e("NoteRepository", "Error permanently deleting note", e)
             noteDao.deleteNote(note)
             Result.failure(e)
         }
@@ -319,8 +328,7 @@ class NoteRepository @Inject constructor(
         try {
             noteDao.removeDuplicateNotes()
             noteDao.removeDuplicatesByContent()
-        } catch (e: Exception) {
-            // Ignore errors during cleanup
+        } catch (_: Exception) {
         }
     }
 
@@ -354,7 +362,6 @@ class NoteRepository @Inject constructor(
                 )
                 noteDao.updateNote(syncedNote)
                 
-                // Create notification and show push notification
                 val notificationTitle = "Note Synced"
                 val notificationMessage = "\"${note.title}\" has been synced to cloud"
                 
@@ -366,7 +373,6 @@ class NoteRepository @Inject constructor(
                     noteTitle = note.title
                 )
                 
-                // Show push notification
                 NotificationHelper.showSyncNotification(
                     context = context,
                     title = notificationTitle,

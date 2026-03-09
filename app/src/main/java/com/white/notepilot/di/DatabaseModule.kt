@@ -3,7 +3,10 @@ package com.white.notepilot.di
 import android.content.Context
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
+import com.white.notepilot.data.dao.CategoryDao
 import com.white.notepilot.data.dao.NoteDao
+import com.white.notepilot.data.dao.NoteImageDao
+import com.white.notepilot.data.dao.NotificationDao
 import com.white.notepilot.data.database.NoteDatabase
 import com.white.notepilot.utils.DBConstants
 import dagger.Module
@@ -39,14 +42,20 @@ object DatabaseModule {
     
     @Provides
     @Singleton
-    fun provideNotificationDao(database: NoteDatabase): com.white.notepilot.data.dao.NotificationDao {
+    fun provideNotificationDao(database: NoteDatabase): NotificationDao {
         return database.notificationDao()
     }
     
     @Provides
     @Singleton
-    fun provideCategoryDao(database: NoteDatabase): com.white.notepilot.data.dao.CategoryDao {
+    fun provideCategoryDao(database: NoteDatabase): CategoryDao {
         return database.categoryDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideNoteImageDao(database: NoteDatabase): NoteImageDao {
+        return database.noteImageDao()
     }
     
     @Provides

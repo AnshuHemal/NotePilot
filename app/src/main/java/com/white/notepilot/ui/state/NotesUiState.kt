@@ -1,6 +1,7 @@
 package com.white.notepilot.ui.state
 
 import com.white.notepilot.data.model.Note
+import com.white.notepilot.data.model.NoteImage
 import com.white.notepilot.enums.SortOrder
 
 data class NotesUiState(
@@ -10,5 +11,7 @@ data class NotesUiState(
     val isLoading: Boolean = false,
     val isEmpty: Boolean = false,
     val selectedNote: Note? = null,
-    val selectedDate: Long? = null
+    val noteImages: List<NoteImage> = emptyList(),
+    val selectedDate: Long? = null,
+    val selectedCategoryIds: List<Int> = emptyList()
 )

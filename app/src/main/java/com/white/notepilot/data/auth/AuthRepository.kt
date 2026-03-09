@@ -60,8 +60,4 @@ class AuthRepository @Inject constructor(
             photoUrl = firebaseUser.photoUrl?.toString()
         )
     }
-
-    fun isUserSignedIn(): Boolean {
-        return firebaseAuth.currentUser != null
-    }
 }

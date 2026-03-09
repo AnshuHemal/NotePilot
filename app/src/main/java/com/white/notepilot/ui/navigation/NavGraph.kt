@@ -10,6 +10,7 @@ import com.white.notepilot.ui.screens.AccountScreen
 import com.white.notepilot.ui.screens.CategoryManagementScreen
 import com.white.notepilot.ui.screens.CreateNoteScreen
 import com.white.notepilot.ui.screens.HomeScreen
+import com.white.notepilot.ui.screens.ImageSyncTestScreen
 import com.white.notepilot.ui.screens.LoginScreen
 import com.white.notepilot.ui.screens.NoteDetailScreen
 import com.white.notepilot.ui.screens.NotificationsScreen
@@ -65,6 +66,9 @@ fun SetupNavGraph(navController: NavHostController) {
         }
         composable(route = Routes.CategoryManagement.route) {
             CategoryManagementScreen(navController = navController)
+        }
+        composable(route = Routes.ImageSyncTest.route) {
+            ImageSyncTestScreen(navController = navController)
         }
     }
 }

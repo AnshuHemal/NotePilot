@@ -3,7 +3,6 @@ package com.white.notepilot.services
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -25,9 +24,6 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "New FCM token: $token")
-        
-        // TODO: Send token to your server if needed
-        // You can save it to SharedPreferences or send to backend
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -35,7 +31,6 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
         
         Log.d(TAG, "Message received from: ${message.from}")
         
-        // Check if message contains a notification payload
         message.notification?.let { notification ->
             Log.d(TAG, "Notification Title: ${notification.title}")
             Log.d(TAG, "Notification Body: ${notification.body}")
@@ -47,11 +42,9 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
             )
         }
         
-        // Check if message contains a data payload
         if (message.data.isNotEmpty()) {
             Log.d(TAG, "Message data payload: ${message.data}")
             
-            // If only data payload (no notification), show notification manually
             if (message.notification == null) {
                 val title = message.data["title"] ?: "Notes"
                 val body = message.data["body"] ?: ""
@@ -67,10 +60,8 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
     ) {
         createNotificationChannel()
         
-        // Create intent to open app when notification is clicked
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            // Add any extra data from the notification
             data.forEach { (key, value) ->
                 putExtra(key, value)
             }
@@ -83,9 +74,8 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         
-        // Build the notification
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use your app icon
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
@@ -93,8 +83,7 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
         
-        // Show the notification
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 
@@ -107,7 +96,7 @@ class NotesFirebaseMessagingService : FirebaseMessagingService() {
                 enableVibration(true)
             }
             
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }

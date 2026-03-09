@@ -53,37 +53,34 @@ fun CategoryChip(
             .clip(RoundedCornerShape(16.dp))
             .background(
                 if (isSelected) {
-                    backgroundColor.copy(alpha = 0.2f)
+                    backgroundColor.copy(alpha = 0.25f)
                 } else {
-                    backgroundColor.copy(alpha = 0.1f)
+                    Color.White.copy(alpha = 0.9f)
                 }
             )
             .border(
-                width = if (isSelected) 1.5.dp else 0.dp,
-                color = if (isSelected) backgroundColor else Color.Transparent,
+                width = 1.dp,
+                color = if (isSelected) backgroundColor else backgroundColor.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Category icon
         Icon(
             painter = painterResource(getCategoryIcon(category.icon)),
             contentDescription = category.name,
             tint = backgroundColor,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(14.dp)
         )
         
-        // Category name
         Text(
             text = category.name,
-            fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
             color = backgroundColor
         )
         
-        // Remove icon
         if (showRemoveIcon && onRemove != null) {
             IconButton(
                 onClick = onRemove,
@@ -108,6 +105,7 @@ private fun getCategoryIcon(iconName: String): Int {
         "star" -> R.drawable.star
         "checklist" -> R.drawable.checklist
         "label" -> R.drawable.label
-        else -> R.drawable.label
+        "category_label" -> R.drawable.category_label
+        else -> R.drawable.category_label
     }
 }

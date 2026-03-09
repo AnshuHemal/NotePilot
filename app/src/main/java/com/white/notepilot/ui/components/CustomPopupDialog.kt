@@ -35,7 +35,6 @@ fun CustomPopupDialog(
     message: String,
     negativeButtonText: String,
     positiveButtonText: String,
-    onDismiss: () -> Unit,
     onNegativeClick: () -> Unit,
     onPositiveClick: () -> Unit
 ) {

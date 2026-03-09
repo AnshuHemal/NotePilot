@@ -15,20 +15,19 @@ data class Category(
     val categoryId: String? = null,
     val name: String,
     val color: String,
-    val icon: String = "label",
+    val icon: String = "category_label",
     @ColumnInfo("created_at")
     val createdAt: Long = System.currentTimeMillis(),
     @ColumnInfo("is_synced")
     val isSynced: Boolean = false
 ) {
     companion object {
-        // Predefined categories
         val DEFAULT_CATEGORIES = listOf(
-            Category(name = "Personal", color = "#4CAF50", icon = "person"),
-            Category(name = "Work", color = "#2196F3", icon = "work"),
-            Category(name = "Ideas", color = "#FF9800", icon = "lightbulb"),
-            Category(name = "Important", color = "#F44336", icon = "star"),
-            Category(name = "To-Do", color = "#9C27B0", icon = "checklist")
+            Category(name = "Personal", color = "#4CAF50", icon = "category_label"),
+            Category(name = "Work", color = "#2196F3", icon = "category_label"),
+            Category(name = "Ideas", color = "#FF9800", icon = "category_label"),
+            Category(name = "Important", color = "#F44336", icon = "category_label"),
+            Category(name = "To-Do", color = "#9C27B0", icon = "category_label")
         )
     }
 }

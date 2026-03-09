@@ -3,7 +3,6 @@ package com.white.notepilot.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,15 +57,14 @@ fun CategorySelectionBottomSheet(
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Select Categories",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "Select Category",
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -89,22 +87,29 @@ fun CategorySelectionBottomSheet(
                     modifier = Modifier.padding(vertical = 24.dp)
                 )
             } else {
-                FlowRow(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    categories.forEach { category ->
-                        CategoryChip(
-                            category = category,
-                            isSelected = selectedIds.contains(category.id),
-                            onClick = {
-                                selectedIds = if (selectedIds.contains(category.id)) {
-                                    selectedIds - category.id
-                                } else {
-                                    selectedIds + category.id
-                                }
+                    categories.chunked(3).forEach { rowCategories ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            rowCategories.forEach { category ->
+                                CategoryChip(
+                                    category = category,
+                                    isSelected = selectedIds.contains(category.id),
+                                    onClick = {
+                                        selectedIds = if (selectedIds.contains(category.id)) {
+                                            emptyList()
+                                        } else {
+                                            listOf(category.id)
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }

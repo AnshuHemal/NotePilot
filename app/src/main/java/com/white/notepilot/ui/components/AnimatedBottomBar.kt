@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -104,7 +105,6 @@ fun AnimatedBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(70.dp)
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = Dimens.PaddingMedium),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,7 +193,6 @@ private fun AnimatedBottomNavItem(
             )
         }
         
-        // Red dot badge
         if (showBadge) {
             Box(
                 modifier = Modifier
@@ -201,7 +200,7 @@ private fun AnimatedBottomNavItem(
                     .offset(x = (-10).dp, y = 8.dp)
                     .size(10.dp)
                     .background(
-                        color = androidx.compose.ui.graphics.Color.Red,
+                        color = Color.Red,
                         shape = CircleShape
                     )
             )

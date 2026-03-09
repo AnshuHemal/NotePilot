@@ -13,7 +13,6 @@ class CategoryRepository @Inject constructor(
     private val categoryDao: CategoryDao
 ) {
     
-    // Category operations
     fun getAllCategories(): Flow<List<Category>> {
         return categoryDao.getAllCategories()
     }
@@ -62,10 +61,22 @@ class CategoryRepository @Inject constructor(
         }
     }
     
-    // Note-Category relationship operations
-    suspend fun addCategoryToNote(noteId: Int, categoryId: Int): Result<Unit> {
+    suspend fun addCategoryToNote(
+        noteId: Int,
+        categoryId: Int,
+        noteFirebaseId: String?,
+        categoryFirebaseId: String?
+    ): Result<Unit> {
         return try {
-            val noteCategory = NoteCategory(noteId = noteId, categoryId = categoryId)
+            val noteFbId = noteFirebaseId ?: "temp_note_$noteId"
+            val categoryFbId = categoryFirebaseId ?: "temp_category_$categoryId"
+            
+            val noteCategory = NoteCategory(
+                noteFirebaseId = noteFbId,
+                categoryFirebaseId = categoryFbId,
+                noteLocalId = noteId,
+                categoryLocalId = categoryId
+            )
             categoryDao.insertNoteCategory(noteCategory)
             Result.success(Unit)
         } catch (e: Exception) {
@@ -75,22 +86,32 @@ class CategoryRepository @Inject constructor(
     
     suspend fun removeCategoryFromNote(noteId: Int, categoryId: Int): Result<Unit> {
         return try {
-            val noteCategory = NoteCategory(noteId = noteId, categoryId = categoryId)
-            categoryDao.deleteNoteCategory(noteCategory)
+            categoryDao.deleteAllCategoriesForNote(noteId)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
     
-    suspend fun updateNoteCategories(noteId: Int, categoryIds: List<Int>): Result<Unit> {
+    suspend fun updateNoteCategories(
+        noteId: Int,
+        categoryIds: List<Int>,
+        noteFirebaseId: String? = null
+    ): Result<Unit> {
         return try {
-            // Remove all existing categories for this note
             categoryDao.deleteAllCategoriesForNote(noteId)
             
-            // Add new categories
             categoryIds.forEach { categoryId ->
-                val noteCategory = NoteCategory(noteId = noteId, categoryId = categoryId)
+                val category = categoryDao.getCategoryById(categoryId)
+                val noteFbId = noteFirebaseId ?: "temp_note_$noteId"
+                val categoryFbId = category?.categoryId ?: "temp_category_$categoryId"
+                
+                val noteCategory = NoteCategory(
+                    noteFirebaseId = noteFbId,
+                    categoryFirebaseId = categoryFbId,
+                    noteLocalId = noteId,
+                    categoryLocalId = categoryId
+                )
                 categoryDao.insertNoteCategory(noteCategory)
             }
             
@@ -109,7 +130,6 @@ class CategoryRepository @Inject constructor(
         }
     }
     
-    // Query operations
     fun getNotesWithCategories(): Flow<List<NoteWithCategories>> {
         return categoryDao.getNotesWithCategories()
     }
@@ -138,15 +158,92 @@ class CategoryRepository @Inject constructor(
         return categoryDao.noteHasCategory(noteId, categoryId)
     }
     
-    // Initialize default categories
     suspend fun initializeDefaultCategories(): Result<Unit> {
         return try {
             Category.DEFAULT_CATEGORIES.forEach { category ->
-                // Only insert if category doesn't exist
                 if (getCategoryByName(category.name) == null) {
                     insertCategory(category)
                 }
             }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun syncCategoriesToFirebase(
+        userId: String,
+        firebaseRepository: FirebaseRepository
+    ): Result<Unit> {
+        return try {
+            val categories = categoryDao.getAllCategoriesSync()
+            
+            categories.forEach { category ->
+                if (!category.isSynced) {
+                    val result = firebaseRepository.syncCategoryToFirestore(
+                        category = category,
+                        userId = userId,
+                        firestoreId = category.categoryId
+                    )
+                    
+                    if (result.isSuccess) {
+                        val firestoreId = result.getOrNull()
+                        if (firestoreId != null) {
+                            val updatedCategory = category.copy(
+                                categoryId = firestoreId,
+                                isSynced = true
+                            )
+                            categoryDao.updateCategory(updatedCategory)
+                        }
+                    }
+                }
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun fetchCategoriesFromFirebase(
+        userId: String,
+        firebaseRepository: FirebaseRepository
+    ): Result<Unit> {
+        return try {
+            val result = firebaseRepository.fetchUserCategories(userId)
+            
+            if (result.isSuccess) {
+                val firebaseCategories = result.getOrNull() ?: emptyList()
+                
+                firebaseCategories.forEach { categoryData ->
+                    val name = categoryData["name"] as? String ?: return@forEach
+                    val color = categoryData["color"] as? String ?: "#4CAF50"
+                    val icon = categoryData["icon"] as? String ?: "label"
+                    val createdAt = (categoryData["created_at"] as? Long) ?: System.currentTimeMillis()
+                    val firestoreId = categoryData["firestoreId"] as? String
+                    
+                    val existingCategory = getCategoryByName(name)
+                    
+                    if (existingCategory == null) {
+                        val newCategory = Category(
+                            name = name,
+                            color = color,
+                            icon = icon,
+                            createdAt = createdAt,
+                            categoryId = firestoreId,
+                            isSynced = true
+                        )
+                        categoryDao.insertCategory(newCategory)
+                    } else if (existingCategory.categoryId == null && firestoreId != null) {
+                        val updatedCategory = existingCategory.copy(
+                            categoryId = firestoreId,
+                            isSynced = true
+                        )
+                        categoryDao.updateCategory(updatedCategory)
+                    }
+                }
+            }
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

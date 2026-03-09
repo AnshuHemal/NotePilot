@@ -6,8 +6,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -16,6 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +28,7 @@ import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.navigation.SetupNavGraph
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.utils.NotificationHelper
+import com.white.notepilot.viewmodel.NotificationViewModel
 import com.white.notepilot.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -34,14 +39,7 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         var onPermissionResult: ((Boolean) -> Unit)? = null
     }
-    
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        Log.d(TAG, "Notification permission result: $isGranted")
-        onPermissionResult?.invoke(isGranted)
-    }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -76,24 +74,22 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     
-    // Get notification count
-    val notificationViewModel: com.white.notepilot.viewmodel.NotificationViewModel = hiltViewModel()
+    val notificationViewModel: NotificationViewModel = hiltViewModel()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val hasUnreadNotifications = unreadCount > 0
     
-    // Update app icon badge when unread count changes
     androidx.compose.runtime.LaunchedEffect(unreadCount) {
-        android.util.Log.d("MainActivity", "Updating app badge with count: $unreadCount")
+        Log.d("MainActivity", "Updating app badge with count: $unreadCount")
         NotificationHelper.updateAppBadge(context, unreadCount)
         
         // Log if badge is supported on this launcher
         val isSupported = NotificationHelper.isBadgeSupported(context)
-        android.util.Log.d("MainActivity", "Badge supported on this launcher: $isSupported")
+        Log.d("MainActivity", "Badge supported on this launcher: $isSupported")
     }
 
     val bottomBarRoutes = listOf(
@@ -137,7 +133,9 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(
+                    innerPadding
+                )
         ) {
             SetupNavGraph(navController = navController)
         }
