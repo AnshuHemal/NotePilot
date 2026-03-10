@@ -39,10 +39,14 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         var onPermissionResult: ((Boolean) -> Unit)? = null
     }
+    
+    private lateinit var interstitialAdManager: com.white.notepilot.ads.InterstitialAdManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        interstitialAdManager = com.white.notepilot.ads.InterstitialAdManager(this)
         
         NotificationHelper.getFCMToken { token ->
             Log.d(TAG, "FCM Token received: $token")
@@ -53,8 +57,15 @@ class MainActivity : ComponentActivity() {
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
             
             NotesTheme(darkTheme = isDarkMode) {
-                MainScreen()
+                MainScreen(interstitialAdManager = interstitialAdManager)
             }
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::interstitialAdManager.isInitialized) {
+            interstitialAdManager.destroy()
         }
     }
     
@@ -73,8 +84,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(interstitialAdManager: com.white.notepilot.ads.InterstitialAdManager) {
     val context = LocalContext.current
+    val activity = context as ComponentActivity
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -83,11 +95,25 @@ fun MainScreen() {
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val hasUnreadNotifications = unreadCount > 0
     
+    val shouldShowInterstitial by com.white.notepilot.ads.NavigationTracker.shouldShowInterstitial.collectAsState()
+    val isAdReady by interstitialAdManager.isAdReady.collectAsState()
+    
+    androidx.compose.runtime.LaunchedEffect(shouldShowInterstitial, isAdReady) {
+        Log.d("MainActivity", "LaunchedEffect triggered - shouldShow: $shouldShowInterstitial, isReady: $isAdReady")
+        if (shouldShowInterstitial && isAdReady) {
+            Log.d("MainActivity", "Attempting to show interstitial ad")
+            val adShown = interstitialAdManager.showAd(activity)
+            Log.d("MainActivity", "Ad shown result: $adShown")
+            if (adShown) {
+                com.white.notepilot.ads.NavigationTracker.onAdShown()
+            }
+        }
+    }
+    
     androidx.compose.runtime.LaunchedEffect(unreadCount) {
         Log.d("MainActivity", "Updating app badge with count: $unreadCount")
         NotificationHelper.updateAppBadge(context, unreadCount)
         
-        // Log if badge is supported on this launcher
         val isSupported = NotificationHelper.isBadgeSupported(context)
         Log.d("MainActivity", "Badge supported on this launcher: $isSupported")
     }
@@ -102,6 +128,7 @@ fun MainScreen() {
     
     val onNavigate = remember(navController) {
         { route: String ->
+            com.white.notepilot.ads.NavigationTracker.trackNavigation()
             navController.navigate(route) {
                 popUpTo(Routes.Home.route) {
                     saveState = true

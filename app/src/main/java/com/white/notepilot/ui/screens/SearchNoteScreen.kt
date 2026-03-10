@@ -119,6 +119,11 @@ private fun SearchNoteScreenContent(
                 onSearchQueryChange = onSearchQueryChange,
                 onBackClick = onBackClick
             )
+        },
+        bottomBar = {
+            com.white.notepilot.ads.BannerAdView(
+                showSpacerBelow = false
+            )
         }
     ) { innerPadding ->
         Box(
@@ -254,8 +259,10 @@ private fun SearchResultsContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            horizontal = Dimens.PaddingMedium,
-            vertical = Dimens.PaddingMedium
+            start = Dimens.PaddingMedium,
+            top = Dimens.PaddingMedium,
+            end = Dimens.PaddingMedium,
+            bottom = Dimens.PaddingMedium
         ),
         verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)
     ) {

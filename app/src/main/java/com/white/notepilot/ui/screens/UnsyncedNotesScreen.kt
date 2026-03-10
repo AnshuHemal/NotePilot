@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.white.notepilot.R
+import com.white.notepilot.ads.AdPositionCalculator
+import com.white.notepilot.ads.NativeAdView
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.ui.components.CustomTopBar
 import com.white.notepilot.ui.theme.Blue
@@ -189,6 +192,10 @@ private fun CreateEditTab(
                     }
                 )
 
+                val adPositions = remember(unsyncedNotes.size) {
+                    com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(unsyncedNotes.size)
+                }
+
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -199,10 +206,11 @@ private fun CreateEditTab(
                     ),
                     verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)
                 ) {
-                    items(
+                    
+                    itemsIndexed(
                         items = unsyncedNotes,
-                        key = { note -> note.id }
-                    ) { note ->
+                        key = { _, note -> note.id }
+                    ) { index, note ->
                         UnsyncedNoteItem(
                             note = note,
                             isSelected = selectedNotes[note.id] == true,
@@ -212,6 +220,10 @@ private fun CreateEditTab(
                                 selectedNotes[note.id] = selected
                             }
                         )
+                        
+                        if (adPositions.contains(index + 1)) {
+                            com.white.notepilot.ads.NativeAdView()
+                        }
                     }
 
                     item {
@@ -320,6 +332,10 @@ private fun RecycleBinTab(
                     }
                 )
 
+                val adPositions = remember(deletedNotes.size) {
+                    com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(deletedNotes.size)
+                }
+
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -330,10 +346,11 @@ private fun RecycleBinTab(
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(
+                    
+                    itemsIndexed(
                         items = deletedNotes,
-                        key = { note -> note.id }
-                    ) { note ->
+                        key = { _, note -> note.id }
+                    ) { index, note ->
                         RecycleBinNoteItem(
                             note = note,
                             isSelected = selectedNotes[note.id] == true,
@@ -356,6 +373,10 @@ private fun RecycleBinTab(
                                 }
                             }
                         )
+                        
+                        if (adPositions.contains(index + 1)) {
+                            com.white.notepilot.ads.NativeAdView()
+                        }
                     }
 
                     item {

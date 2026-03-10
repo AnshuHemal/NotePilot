@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.white.notepilot.ui.screens.AboutScreen
 import com.white.notepilot.ui.screens.AccountScreen
 import com.white.notepilot.ui.screens.CategoryManagementScreen
 import com.white.notepilot.ui.screens.CreateNoteScreen
@@ -13,6 +14,7 @@ import com.white.notepilot.ui.screens.HomeScreen
 import com.white.notepilot.ui.screens.LoginScreen
 import com.white.notepilot.ui.screens.NoteDetailScreen
 import com.white.notepilot.ui.screens.NotificationsScreen
+import com.white.notepilot.ui.screens.ReportFeedbackScreen
 import com.white.notepilot.ui.screens.SearchNoteScreen
 import com.white.notepilot.ui.screens.SettingsScreen
 import com.white.notepilot.ui.screens.SplashScreen
@@ -65,6 +67,12 @@ fun SetupNavGraph(navController: NavHostController) {
         }
         composable(route = Routes.CategoryManagement.route) {
             CategoryManagementScreen(navController = navController)
+        }
+        composable(route = Routes.About.route) {
+            AboutScreen(navController = navController)
+        }
+        composable(route = Routes.ReportFeedback.route) {
+            ReportFeedbackScreen(navController = navController)
         }
 //        composable(route = Routes.RecycleBin.route) {
 //            RecycleBinScreen(navController = navController)

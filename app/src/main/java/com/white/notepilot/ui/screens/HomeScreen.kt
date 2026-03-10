@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -158,7 +159,6 @@ private fun HomeScreenContent(
         }
     }
     
-    // Memoize callbacks to prevent NotesListContent recomposition
     val onNoteClick = remember(navController) {
         { note: Note ->
             navController.navigate(Routes.NoteDetail.createRoute(note.id))
@@ -335,6 +335,10 @@ private fun NotesListContent(
     onNoteClick: (Note) -> Unit,
     onNoteDelete: (Note) -> Unit
 ) {
+    val adPositions = remember(notes.size) {
+        com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(notes.size)
+    }
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -344,16 +348,20 @@ private fun NotesListContent(
         ),
         verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)
     ) {
-        items(
+        itemsIndexed(
             items = notes,
-            key = { note -> note.id }
-        ) { note ->
+            key = { _, note -> note.id }
+        ) { index, note ->
             NoteItemWithCategories(
                 note = note,
                 categoryViewModel = categoryViewModel,
                 onNoteClick = { onNoteClick(note) },
                 onNoteDelete = { onNoteDelete(note) }
             )
+            
+            if (adPositions.contains(index + 1)) {
+                com.white.notepilot.ads.NativeAdView()
+            }
         }
     }
 }

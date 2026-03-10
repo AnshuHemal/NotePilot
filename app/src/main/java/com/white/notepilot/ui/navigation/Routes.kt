@@ -18,4 +18,6 @@ sealed class Routes(val route: String) {
     object CategoryManagement : Routes("category_management")
     object Admin : Routes("admin")
     object RecycleBin : Routes("recycle_bin")
+    object About : Routes("about")
+    object ReportFeedback : Routes("report_feedback")
 }

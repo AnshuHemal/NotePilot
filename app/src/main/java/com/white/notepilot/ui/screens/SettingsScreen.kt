@@ -1,6 +1,8 @@
 package com.white.notepilot.ui.screens
 
 import android.app.Activity
+import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,8 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -28,7 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +51,7 @@ import com.white.notepilot.MainActivity
 import com.white.notepilot.R
 import com.white.notepilot.data.preferences.NotificationPreferences
 import com.white.notepilot.ui.components.CustomPopupDialog
+import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Blue
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.LightGray
@@ -166,6 +178,39 @@ fun SettingsScreen(
             )
             
             Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = "Support & Information",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            SettingSwitchItem(
+                title = "About",
+                description = "App version, privacy policy, and more",
+                checked = false,
+                onCheckedChange = { },
+                isClickable = true,
+                onClick = {
+                    navController.navigate(Routes.About.route)
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            SettingSwitchItem(
+                title = "Report & Feedback",
+                description = "Help us improve the app",
+                checked = false,
+                onCheckedChange = { },
+                isClickable = true,
+                onClick = {
+                    navController.navigate(Routes.ReportFeedback.route)
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
         }
         
         if (showDisableDialog) {
@@ -209,19 +254,148 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel()
 
 @Composable
+private fun SettingsClickableItem(
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 13.sp,
+                    color = LightGray,
+                    lineHeight = 18.sp
+                )
+            }
+            
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsNavigationItem(
+    title: String,
+    description: String,
+    icon: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = title,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontSize = 13.sp
+                )
+            }
+            
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+private fun openFeedbackEmail(context: Context) {
+    try {
+        val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+            data = android.net.Uri.parse("mailto:")
+            putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf("hemalkatariya4488@gmail.com"))
+            putExtra(android.content.Intent.EXTRA_SUBJECT, "NotePilot - Feedback & Report")
+            putExtra(android.content.Intent.EXTRA_TEXT, "Hi,\n\nI would like to provide feedback about NotePilot:\n\n")
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        // Handle error - could show a toast or log
+    }
+}
+
+@Composable
 private fun SettingSwitchItem(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    description: String? = null
+    description: String? = null,
+    isClickable: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isClickable && onClick != null) {
+                        Modifier.clickable { onClick() }
+                    } else Modifier
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -247,18 +421,26 @@ private fun SettingSwitchItem(
                 }
             }
             
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor = Blue,
-                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
-                    uncheckedTrackColor = LightGray.copy(alpha = 0.3f),
-                    checkedBorderColor = Color.Transparent,
-                    uncheckedBorderColor = Color.Transparent
+            if (isClickable) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = "Navigate",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-            )
+            } else {
+                Switch(
+                    checked = checked,
+                    onCheckedChange = onCheckedChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = Blue,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                        uncheckedTrackColor = LightGray.copy(alpha = 0.3f),
+                        checkedBorderColor = Color.Transparent,
+                        uncheckedBorderColor = Color.Transparent
+                    )
+                )
+            }
         }
     }
 }

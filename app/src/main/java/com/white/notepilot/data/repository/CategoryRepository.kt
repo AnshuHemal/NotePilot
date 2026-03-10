@@ -51,6 +51,31 @@ class CategoryRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun deleteCategoryWithFirebaseSync(
+        category: Category,
+        userId: String,
+        firebaseRepository: FirebaseRepository
+    ): Result<Unit> {
+        return try {
+            // Delete from Room database first
+            categoryDao.deleteCategory(category)
+            
+            // Delete from Firebase if the category has a Firebase ID
+            category.categoryId?.let { firestoreId ->
+                val firebaseResult = firebaseRepository.deleteCategoryFromFirestore(firestoreId, userId)
+                if (firebaseResult.isFailure) {
+                    // Log the Firebase error but don't fail the entire operation
+                    // since the local deletion was successful
+                    println("Failed to delete category from Firebase: ${firebaseResult.exceptionOrNull()?.message}")
+                }
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     
     suspend fun deleteAllCategories(): Result<Unit> {
         return try {

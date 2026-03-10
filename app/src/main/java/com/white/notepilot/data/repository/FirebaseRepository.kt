@@ -173,9 +173,51 @@ class FirebaseRepository @Inject constructor(
         }
     }
 
+    suspend fun deleteCategoryFromFirestore(
+        firestoreId: String,
+        userId: String
+    ): Result<Unit> {
+        return try {
+            getUserCategoriesCollection(userId)
+                .document(firestoreId)
+                .delete()
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun getUserCategoriesCollection(userId: String) =
         firestore.collection(FirebaseConstants.USERS_COLLECTION)
             .document(userId)
             .collection("categories")
+
+    suspend fun submitFeedback(
+        feedback: com.white.notepilot.data.model.Feedback
+    ): Result<String> {
+        return try {
+            val feedbackData = hashMapOf(
+                "userId" to feedback.userId,
+                "userEmail" to feedback.userEmail,
+                "feedbackType" to feedback.feedbackType.name,
+                "subject" to feedback.subject,
+                "description" to feedback.description,
+                "deviceInfo" to feedback.deviceInfo,
+                "appVersion" to feedback.appVersion,
+                "attachmentUrls" to feedback.attachmentUrls,
+                "timestamp" to feedback.timestamp,
+                "status" to feedback.status.name
+            )
+            
+            val docRef = firestore.collection("feedback")
+                .add(feedbackData)
+                .await()
+            
+            Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 }

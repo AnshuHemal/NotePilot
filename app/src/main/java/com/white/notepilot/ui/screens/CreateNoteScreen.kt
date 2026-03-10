@@ -60,6 +60,7 @@ import androidx.navigation.NavHostController
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import com.white.notepilot.R
+import com.white.notepilot.ads.BannerAdView
 import com.white.notepilot.data.model.Category
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.data.model.NoteImage
@@ -340,14 +341,20 @@ private fun CreateNoteScreenContent(
                     )
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Dimens.PaddingLarge)
             ) {
-                TextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.title),
+                BannerAdView(
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Column(
+                    modifier = Modifier.padding(horizontal = Dimens.PaddingLarge)
+                ) {
+                    TextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = {
+                            Text(
+                                text = stringResource(R.string.title),
                             style = MaterialTheme.typography.headlineLarge
                         )
                     },
@@ -488,6 +495,7 @@ private fun CreateNoteScreenContent(
                         }
                     }
                 )
+                }
             }
             
             // Rich Text Toolbar overlay at bottom

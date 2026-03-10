@@ -214,7 +214,19 @@ fun CategoryManagementScreen(
                 onNegativeClick = { categoryToDelete = null },
                 onPositiveClick = {
                     scope.launch {
-                        viewModel.deleteCategory(category)
+                        val userId = authViewModel.getCurrentUser()?.uid
+                        if (userId != null) {
+                            val firebaseRepository = FirebaseRepository(
+                                FirebaseFirestore.getInstance()
+                            )
+                            viewModel.deleteCategoryWithFirebaseSync(category, userId, firebaseRepository)
+                            snackbarMessage = "Category \"${category.name}\" deleted successfully"
+                            showSnackbar = true
+                        } else {
+                            viewModel.deleteCategory(category)
+                            snackbarMessage = "Category \"${category.name}\" deleted locally"
+                            showSnackbar = true
+                        }
                         categoryToDelete = null
                     }
                 }

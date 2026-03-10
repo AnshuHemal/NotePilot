@@ -76,6 +76,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
+    implementation(libs.play.services.ads)
 
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("com.google.code.gson:gson:2.13.2")

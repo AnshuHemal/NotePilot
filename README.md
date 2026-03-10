@@ -156,6 +156,31 @@ A modern, feature-rich note-taking application for Android built with Jetpack Co
 - **Account Management**: View and manage account details
 - **App Information**: Version, build info
 
+#### Support & Information
+- **About Screen**: App version, privacy policy, terms of use, developer credits
+- **Report & Feedback System**: Comprehensive feedback collection with Firebase integration
+- **Professional Layout**: Consistent styling across all settings sections
+
+### 📝 Feedback System
+
+#### Report & Feedback
+- **Feedback Types**: Bug Report, Feature Request, General Feedback, UI/UX Issues, Performance Issues
+- **Smart Form**: Auto-populated user email from authenticated account
+- **Character Limits**: Subject field limited to 25 characters with real-time counter
+- **Keyboard Navigation**: IME actions for smooth field navigation (Next/Done)
+- **Network Awareness**: Automatic internet connectivity detection
+- **Firebase Integration**: Direct submission to Firestore database
+- **Device Information**: Automatic collection of device and app version details
+- **Progress Indicators**: Visual feedback during submission process
+- **Error Handling**: Specific error messages for network and submission issues
+
+#### About Screen
+- **App Information**: Version, description, and branding
+- **Legal Links**: Privacy Policy, Terms of Use, Open Source Licenses
+- **Developer Credits**: Professional developer attribution at bottom
+- **External Links**: Rate app on Play Store, open external URLs
+- **Consistent Design**: Matches app's overall design language
+
 ### 📊 Data Management
 
 #### Database
@@ -172,6 +197,7 @@ A modern, feature-rich note-taking application for Android built with Jetpack Co
 - Images with local and cloud paths
 - Notifications
 - User preferences
+- Feedback with types and status tracking
 
 ### 🛠️ Technical Features
 
@@ -205,7 +231,6 @@ A modern, feature-rich note-taking application for Android built with Jetpack Co
 ### 🔧 Developer Features
 
 #### Debugging Tools
-- **Image Sync Test Screen**: Manual image sync testing
 - **Unsynced Notes Screen**: View and sync unsynced notes
 - **Comprehensive Logging**: Detailed logs for debugging
 - **Error Handling**: Graceful error handling throughout
@@ -216,6 +241,16 @@ A modern, feature-rich note-taking application for Android built with Jetpack Co
 - Comprehensive logging
 - Type-safe navigation
 - Null safety
+
+### 💰 Monetization
+
+#### AdMob Integration
+- **Banner Ads**: Non-intrusive banner ads in CreateNoteScreen
+- **Strategic Placement**: Ads placed below header, above content
+- **Test Ads**: Google test ads for development
+- **Easy Configuration**: Simple setup with AdMobConfig
+
+For AdMob setup instructions, see [ADMOB_SETUP.md](ADMOB_SETUP.md)
 
 ## 🚀 Getting Started
 
@@ -327,6 +362,7 @@ app/
 - **AuthViewModel**: Authentication state
 - **CategoryViewModel**: Category management
 - **SettingsViewModel**: App settings and preferences
+- **FeedbackViewModel**: Feedback form state and submission
 
 ### Repositories
 - **NoteRepository**: Note CRUD operations
@@ -334,6 +370,7 @@ app/
 - **ImageRepository**: Image storage and sync
 - **FirebaseRepository**: Firebase Firestore operations
 - **NotificationRepository**: Notification management
+- **FeedbackRepository**: Feedback submission and network handling
 
 ### UI Screens
 - **HomeScreen**: Main note list
@@ -345,7 +382,8 @@ app/
 - **NotificationsScreen**: Notification center
 - **SettingsScreen**: App settings
 - **AccountScreen**: User profile
-- **ImageSyncTestScreen**: Image sync testing
+- **AboutScreen**: App information and legal links
+- **ReportFeedbackScreen**: Feedback submission form
 
 ## 🎯 Features in Detail
 
@@ -435,6 +473,8 @@ None currently. All features are working properly.
 - [ ] Widget support
 - [ ] Tablet optimization
 - [ ] Wear OS support
+- [ ] Feedback attachment support
+- [ ] Admin panel for feedback management
 
 ## 🤝 Contributing
 
@@ -475,6 +515,13 @@ For support, email connect.hemal@gmail.com or open an issue in the GitHub reposi
 - Notifications
 - Search and filter
 - Dark/Light theme
+- AdMob integration
+- About screen with app information
+- Report & Feedback system with Firebase integration
+- Professional settings layout
+- Category deletion with Firebase sync
+- Native ads in note lists
+- Interstitial ads for navigation tracking
 
 
 **Built with ❤️ using Jetpack Compose and Material Design 3 by  HEMAL KATARIYA**

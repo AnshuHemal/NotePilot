@@ -65,6 +65,19 @@ class CategoryViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteCategoryWithFirebaseSync(
+        category: Category,
+        userId: String,
+        firebaseRepository: com.white.notepilot.data.repository.FirebaseRepository
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.deleteCategoryWithFirebaseSync(category, userId, firebaseRepository)
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message
+            }
+        }
+    }
     
     fun getCategoriesForNote(noteId: Int): StateFlow<List<Category>> {
         return repository.getCategoriesForNote(noteId)
