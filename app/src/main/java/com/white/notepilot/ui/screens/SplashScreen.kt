@@ -76,10 +76,12 @@ fun SplashScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -91,7 +93,6 @@ fun SplashScreen(
                         .alpha(alpha.value)
                 )
 
-
                 Text(
                     text = stringResource(R.string.capture_your_thoughts),
                     style = MaterialTheme.typography.bodyMedium,
@@ -99,6 +100,29 @@ fun SplashScreen(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.W600
                 )
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .alpha(alpha.value),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Developed by",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Hemal Katariya",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

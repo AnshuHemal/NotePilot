@@ -216,10 +216,6 @@ private fun HomeScreenContent(
                             imageRes = R.drawable.unsynced_note,
                             onClick = { navController.navigate(Routes.UnsyncedNotes.route) }
                         )
-                        RoundedImageCard(
-                            imageRes = R.drawable.sync,
-                            onClick = { navController.navigate(Routes.ImageSyncTest.route) }
-                        )
                     }
                 }
 

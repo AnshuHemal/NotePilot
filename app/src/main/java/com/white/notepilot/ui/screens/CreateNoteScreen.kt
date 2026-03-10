@@ -228,10 +228,9 @@ private fun CreateNoteScreenContent(
                 },
                 customContent = {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Image attachment button
                         IconButton(
                             onClick = { imagePickerLauncher.launch("image/*") },
                             modifier = Modifier
@@ -247,7 +246,6 @@ private fun CreateNoteScreenContent(
                             )
                         }
                         
-                        // Category button
                         IconButton(
                             onClick = { showCategorySheet = true },
                             modifier = Modifier
@@ -263,7 +261,6 @@ private fun CreateNoteScreenContent(
                             )
                         }
                         
-                        // Save button
                         IconButton(
                             onClick = {
                                 if (isSaving) return@IconButton
