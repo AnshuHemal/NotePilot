@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -78,8 +77,7 @@ fun ReportFeedbackScreen(
     val scope = rememberCoroutineScope()
     val uiState by feedbackViewModel.uiState.collectAsState()
     val isSubmitting by feedbackViewModel.isSubmitting.collectAsState()
-    val currentUser = authViewModel.getCurrentUser()
-    
+
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarIsError by remember { mutableStateOf(false) }
@@ -93,7 +91,6 @@ fun ReportFeedbackScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Sticky Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -147,10 +144,6 @@ fun ReportFeedbackScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         lineHeight = 20.sp
                     )
-                    
-//                    Spacer(modifier = Modifier.height(24.dp))
-                    
-//                    UserInfoSection(userEmail = currentUser?.email ?: "")
                     
                     Spacer(modifier = Modifier.height(20.dp))
                     
@@ -218,40 +211,6 @@ fun ReportFeedbackScreen(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun UserInfoSection(userEmail: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Submitting as:",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                fontWeight = FontWeight.Medium
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = userEmail.ifEmpty { "Not logged in" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium
-            )
         }
     }
 }

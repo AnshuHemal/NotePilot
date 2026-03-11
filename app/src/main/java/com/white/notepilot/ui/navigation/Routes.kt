@@ -20,4 +20,6 @@ sealed class Routes(val route: String) {
     object RecycleBin : Routes("recycle_bin")
     object About : Routes("about")
     object ReportFeedback : Routes("report_feedback")
+    object PrivacyPolicy : Routes("privacy_policy")
+    object TermsOfUse : Routes("terms_of_use")
 }

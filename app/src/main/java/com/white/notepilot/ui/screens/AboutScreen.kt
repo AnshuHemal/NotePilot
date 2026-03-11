@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.white.notepilot.R
+import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.NotesTheme
 import androidx.core.net.toUri
@@ -87,7 +88,10 @@ fun AboutScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                AboutItemsSection(context = context)
+                AboutItemsSection(
+                    context = context,
+                    navController = navController
+                )
                 
                 Spacer(modifier = Modifier.height(100.dp))
             }
@@ -142,7 +146,10 @@ private fun AppInfoSection() {
 }
 
 @Composable
-private fun AboutItemsSection(context: Context) {
+private fun AboutItemsSection(
+    context: Context,
+    navController: NavHostController
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -158,31 +165,24 @@ private fun AboutItemsSection(context: Context) {
             title = "Privacy Policy",
             description = "How we handle your data",
             onClick = {
-                openUrl(context, "https://your-privacy-policy-url.com")
+                navController.navigate(Routes.PrivacyPolicy.route)
             }
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
         
         AboutItem(
             title = "Terms of Use",
             description = "Terms and conditions",
             onClick = {
-                openUrl(context, "https://your-terms-url.com")
+                navController.navigate(Routes.TermsOfUse.route)
             }
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
+
         AboutItem(
             title = "Open Source Licenses",
             description = "Third-party libraries",
-            onClick = {
-            }
+            onClick = {}
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
+
         AboutItem(
             title = "Rate the App",
             description = "Share your feedback on Play Store",

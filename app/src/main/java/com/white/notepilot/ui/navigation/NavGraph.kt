@@ -14,10 +14,12 @@ import com.white.notepilot.ui.screens.HomeScreen
 import com.white.notepilot.ui.screens.LoginScreen
 import com.white.notepilot.ui.screens.NoteDetailScreen
 import com.white.notepilot.ui.screens.NotificationsScreen
+import com.white.notepilot.ui.screens.PrivacyPolicyScreen
 import com.white.notepilot.ui.screens.ReportFeedbackScreen
 import com.white.notepilot.ui.screens.SearchNoteScreen
 import com.white.notepilot.ui.screens.SettingsScreen
 import com.white.notepilot.ui.screens.SplashScreen
+import com.white.notepilot.ui.screens.TermsOfUseScreen
 import com.white.notepilot.ui.screens.UnsyncedNotesScreen
 
 @Composable
@@ -73,6 +75,12 @@ fun SetupNavGraph(navController: NavHostController) {
         }
         composable(route = Routes.ReportFeedback.route) {
             ReportFeedbackScreen(navController = navController)
+        }
+        composable(route = Routes.PrivacyPolicy.route) {
+            PrivacyPolicyScreen(navController = navController)
+        }
+        composable(route = Routes.TermsOfUse.route) {
+            TermsOfUseScreen(navController = navController)
         }
 //        composable(route = Routes.RecycleBin.route) {
 //            RecycleBinScreen(navController = navController)
