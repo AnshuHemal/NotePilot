@@ -1,6 +1,5 @@
 package com.white.notepilot.ui.components
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
@@ -14,7 +13,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -219,7 +217,7 @@ private fun openPlayStore(context: Context, playStoreUrl: String) {
         
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         context.startActivity(intent)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         try {
             val webUrl = if (playStoreUrl.isNotEmpty() && playStoreUrl.startsWith("http")) {
                 playStoreUrl
@@ -229,8 +227,7 @@ private fun openPlayStore(context: Context, playStoreUrl: String) {
             
             val intent = Intent(Intent.ACTION_VIEW, webUrl.toUri())
             context.startActivity(intent)
-        } catch (e: Exception) {
-            // Handle error silently
+        } catch (_: Exception) {
         }
     }
 }
