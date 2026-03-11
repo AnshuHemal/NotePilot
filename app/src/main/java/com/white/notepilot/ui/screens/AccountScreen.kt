@@ -43,23 +43,30 @@ import coil.compose.AsyncImage
 import com.white.notepilot.data.auth.AuthState
 import com.white.notepilot.data.model.User
 import com.white.notepilot.ui.components.CustomPopupDialog
+import com.white.notepilot.ui.components.RewardsSection
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.LightGray
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.viewmodel.AuthViewModel
+import com.white.notepilot.viewmodel.RewardsViewModel
 
 @Composable
 fun AccountScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    rewardsViewModel: RewardsViewModel = hiltViewModel()
 ) {
     var user by remember { mutableStateOf<User?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     val authState by authViewModel.authState.collectAsState()
+    val userRewards by rewardsViewModel.userRewards.collectAsState()
     
     LaunchedEffect(Unit) {
         user = authViewModel.getCurrentUser()
+        user?.uid?.let { userId ->
+            rewardsViewModel.loadUserRewards(userId)
+        }
     }
     
     LaunchedEffect(authState) {
@@ -90,6 +97,14 @@ fun AccountScreen(
             
             user?.let { currentUser ->
                 ProfileSection(user = currentUser)
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                RewardsSection(
+                    userRewards = userRewards,
+                    rewardsViewModel = rewardsViewModel,
+                    userId = currentUser.uid
+                )
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 

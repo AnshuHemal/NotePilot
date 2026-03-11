@@ -1,4 +1,4 @@
-package com.white.notepilot.ads
+package com.white.notepilot.ui.components.ads
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,16 +9,18 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.white.notepilot.R
 
 @Composable
 fun BannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = AdMobConfig.BANNER_AD_UNIT_ID,
+    adUnitId: String = stringResource(R.string.banner_ad_unit_id),
     showSpacerBelow: Boolean = true
 ) {
     val context = LocalContext.current

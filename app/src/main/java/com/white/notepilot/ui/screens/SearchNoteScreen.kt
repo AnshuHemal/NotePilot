@@ -38,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -47,6 +46,7 @@ import com.white.notepilot.data.model.Note
 import com.white.notepilot.ui.components.CustomSnackbar
 import com.white.notepilot.ui.components.RoundedImageCard
 import com.white.notepilot.ui.components.SwipeToDeleteNoteItem
+import com.white.notepilot.ui.components.ads.BannerAdView
 import com.white.notepilot.ui.events.NotesEvent
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Dimens
@@ -121,7 +121,7 @@ private fun SearchNoteScreenContent(
             )
         },
         bottomBar = {
-            com.white.notepilot.ads.BannerAdView(
+            BannerAdView(
                 showSpacerBelow = false
             )
         }

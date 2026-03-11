@@ -168,6 +168,8 @@ private fun AboutItemsSection(
                 navController.navigate(Routes.PrivacyPolicy.route)
             }
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
         
         AboutItem(
             title = "Terms of Use",
@@ -177,11 +179,17 @@ private fun AboutItemsSection(
             }
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
         AboutItem(
             title = "Open Source Licenses",
             description = "Third-party libraries",
-            onClick = {}
+            onClick = {
+                navController.navigate(Routes.OpenSourceLicenses.route)
+            }
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         AboutItem(
             title = "Rate the App",
@@ -264,14 +272,6 @@ private fun AboutItem(
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
         }
-    }
-}
-
-private fun openUrl(context: Context, url: String) {
-    try {
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-        context.startActivity(intent)
-    } catch (_: Exception) {
     }
 }
 

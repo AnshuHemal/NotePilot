@@ -1,6 +1,7 @@
-package com.white.notepilot.ads
+package com.white.notepilot.ui.components.ads
 
 import android.util.Log
+import com.white.notepilot.utils.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,7 @@ object NavigationTracker {
         navigationCount++
         Log.d(TAG, "Navigation tracked. Count: $navigationCount")
         
-        if (navigationCount >= AdMobConfig.NAVIGATION_COUNT_THRESHOLD && !_shouldShowInterstitial.value) {
+        if (navigationCount >= Constants.NAVIGATION_COUNT_THRESHOLD && !_shouldShowInterstitial.value) {
             Log.d(TAG, "Threshold reached. Triggering interstitial ad.")
             _shouldShowInterstitial.value = true
         }
@@ -26,7 +27,7 @@ object NavigationTracker {
     fun onAdShown() {
         Log.d(TAG, "Ad shown. Resetting trigger and adjusting count.")
         _shouldShowInterstitial.value = false
-        navigationCount = 0 // Reset to 0 for cleaner tracking
+        navigationCount = 0
         lastResetTime = System.currentTimeMillis()
     }
     
@@ -36,9 +37,7 @@ object NavigationTracker {
         lastResetTime = System.currentTimeMillis()
         _shouldShowInterstitial.value = false
     }
-    
-    fun getNavigationCount(): Int = navigationCount
-    
+
     fun checkAndResetIfInactive(inactivityThresholdMs: Long = 300000L) {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastResetTime > inactivityThresholdMs) {

@@ -27,14 +27,14 @@ val Typography = Typography(
         fontFamily = fontFamily,
         fontWeight = FontWeight.W400,
         fontSize = 25.sp,
-        lineHeight = 28.sp,
+        lineHeight = 34.sp,
         letterSpacing = 0.5.sp
     ),
     titleLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.W600,
         fontSize = 32.sp,
-        lineHeight = 28.sp,
+        lineHeight = 38.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(

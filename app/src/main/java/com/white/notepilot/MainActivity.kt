@@ -7,29 +7,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.white.notepilot.ui.components.AnimatedBottomBar
+import com.white.notepilot.ui.components.ForceUpdateBottomSheet
+import com.white.notepilot.ui.components.ads.InterstitialAdManager
+import com.white.notepilot.ui.components.ads.NavigationTracker
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.navigation.SetupNavGraph
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.utils.NotificationHelper
 import com.white.notepilot.viewmodel.NotificationViewModel
 import com.white.notepilot.viewmodel.ThemeViewModel
+import com.white.notepilot.viewmodel.UpdateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -40,13 +41,13 @@ class MainActivity : ComponentActivity() {
         var onPermissionResult: ((Boolean) -> Unit)? = null
     }
     
-    private lateinit var interstitialAdManager: com.white.notepilot.ads.InterstitialAdManager
+    private lateinit var interstitialAdManager: InterstitialAdManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        interstitialAdManager = com.white.notepilot.ads.InterstitialAdManager(this)
+        interstitialAdManager = InterstitialAdManager(this)
         
         NotificationHelper.getFCMToken { token ->
             Log.d(TAG, "FCM Token received: $token")
@@ -84,7 +85,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(interstitialAdManager: com.white.notepilot.ads.InterstitialAdManager) {
+fun MainScreen(interstitialAdManager: InterstitialAdManager) {
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val navController = rememberNavController()
@@ -95,22 +96,29 @@ fun MainScreen(interstitialAdManager: com.white.notepilot.ads.InterstitialAdMana
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val hasUnreadNotifications = unreadCount > 0
     
-    val shouldShowInterstitial by com.white.notepilot.ads.NavigationTracker.shouldShowInterstitial.collectAsState()
+    val updateViewModel: UpdateViewModel = hiltViewModel()
+    val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsState()
+    val isForceUpdate by updateViewModel.isForceUpdate.collectAsState()
+    val updateInfo by updateViewModel.updateInfo.collectAsState()
+    
+    // Update check moved to HomeScreen
+    
+    val shouldShowInterstitial by NavigationTracker.shouldShowInterstitial.collectAsState()
     val isAdReady by interstitialAdManager.isAdReady.collectAsState()
     
-    androidx.compose.runtime.LaunchedEffect(shouldShowInterstitial, isAdReady) {
+    LaunchedEffect(shouldShowInterstitial, isAdReady) {
         Log.d("MainActivity", "LaunchedEffect triggered - shouldShow: $shouldShowInterstitial, isReady: $isAdReady")
         if (shouldShowInterstitial && isAdReady) {
             Log.d("MainActivity", "Attempting to show interstitial ad")
             val adShown = interstitialAdManager.showAd(activity)
             Log.d("MainActivity", "Ad shown result: $adShown")
             if (adShown) {
-                com.white.notepilot.ads.NavigationTracker.onAdShown()
+                NavigationTracker.onAdShown()
             }
         }
     }
     
-    androidx.compose.runtime.LaunchedEffect(unreadCount) {
+    LaunchedEffect(unreadCount) {
         Log.d("MainActivity", "Updating app badge with count: $unreadCount")
         NotificationHelper.updateAppBadge(context, unreadCount)
         
@@ -128,7 +136,7 @@ fun MainScreen(interstitialAdManager: com.white.notepilot.ads.InterstitialAdMana
     
     val onNavigate = remember(navController) {
         { route: String ->
-            com.white.notepilot.ads.NavigationTracker.trackNavigation()
+            NavigationTracker.trackNavigation()
             navController.navigate(route) {
                 popUpTo(Routes.Home.route) {
                     saveState = true
@@ -166,5 +174,23 @@ fun MainScreen(interstitialAdManager: com.white.notepilot.ads.InterstitialAdMana
         ) {
             SetupNavGraph(navController = navController)
         }
+    }
+    
+    // Force Update Bottom Sheet
+    if (showUpdateDialog && updateInfo != null) {
+        ForceUpdateBottomSheet(
+            updateInfo = updateInfo!!,
+            isForceUpdate = isForceUpdate,
+            onUpdateClick = {
+                // User clicked update, keep dialog open until they return
+            },
+            onExitClick = {
+                // Exit the app
+                activity.finishAffinity()
+            },
+            onDismiss = {
+                updateViewModel.dismissUpdateDialog()
+            }
+        )
     }
 }

@@ -14,6 +14,7 @@ import com.white.notepilot.ui.screens.HomeScreen
 import com.white.notepilot.ui.screens.LoginScreen
 import com.white.notepilot.ui.screens.NoteDetailScreen
 import com.white.notepilot.ui.screens.NotificationsScreen
+import com.white.notepilot.ui.screens.OpenSourceLicensesScreen
 import com.white.notepilot.ui.screens.PrivacyPolicyScreen
 import com.white.notepilot.ui.screens.ReportFeedbackScreen
 import com.white.notepilot.ui.screens.SearchNoteScreen
@@ -81,6 +82,9 @@ fun SetupNavGraph(navController: NavHostController) {
         }
         composable(route = Routes.TermsOfUse.route) {
             TermsOfUseScreen(navController = navController)
+        }
+        composable(route = Routes.OpenSourceLicenses.route) {
+            OpenSourceLicensesScreen(navController = navController)
         }
 //        composable(route = Routes.RecycleBin.route) {
 //            RecycleBinScreen(navController = navController)

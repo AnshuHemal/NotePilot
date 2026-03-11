@@ -1,4 +1,4 @@
-package com.white.notepilot.ads
+package com.white.notepilot.ui.components.ads
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,12 +41,13 @@ import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.nativead.NativeAd
+import com.white.notepilot.R
 import com.white.notepilot.ui.theme.Dimens
 
 @Composable
 fun NativeAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = AdMobConfig.NATIVE_AD_UNIT_ID
+    adUnitId: String = stringResource(R.string.native_ad_unit_id)
 ) {
     val context = LocalContext.current
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }

@@ -1,13 +1,17 @@
-package com.white.notepilot.ads
+package com.white.notepilot.ui.components.ads
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
+import androidx.compose.ui.res.stringResource
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.white.notepilot.R
+import com.white.notepilot.utils.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +44,7 @@ class InterstitialAdManager(private val context: Context) {
         
         InterstitialAd.load(
             context,
-            AdMobConfig.INTERSTITIAL_AD_UNIT_ID,
+            context.getString(R.string.interstitial_ad_unit_id),
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdFailedToLoad(error: LoadAdError) {
@@ -89,14 +93,14 @@ class InterstitialAdManager(private val context: Context) {
         )
     }
     
-    fun showAd(activity: android.app.Activity): Boolean {
+    fun showAd(activity: Activity): Boolean {
         val currentTime = System.currentTimeMillis()
         val timeSinceLastAd = currentTime - lastAdShownTime
         
         Log.d(TAG, "Attempting to show ad. Ad ready: ${interstitialAd != null}, Time since last: ${timeSinceLastAd}ms")
         
         return if (interstitialAd != null && 
-                   timeSinceLastAd >= AdMobConfig.MIN_TIME_BETWEEN_INTERSTITIAL_MS) {
+                   timeSinceLastAd >= Constants.MIN_TIME_BETWEEN_INTERSTITIAL_MS) {
             Log.d(TAG, "Showing interstitial ad")
             interstitialAd?.show(activity)
             true

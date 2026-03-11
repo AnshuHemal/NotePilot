@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -44,15 +43,19 @@ import com.white.notepilot.R
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.ui.components.CustomSnackbar
 import com.white.notepilot.ui.components.FilterBottomSheet
+import com.white.notepilot.ui.components.ForceUpdateBottomSheet
 import com.white.notepilot.ui.components.InfoDialog
 import com.white.notepilot.ui.components.RoundedImageCard
 import com.white.notepilot.ui.components.SwipeToDeleteNoteItem
+import com.white.notepilot.ui.components.ads.AdPositionCalculator
+import com.white.notepilot.ui.components.ads.NativeAdView
 import com.white.notepilot.ui.events.NotesEvent
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.state.NotesUiState
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.viewmodel.NotesViewModel
+import com.white.notepilot.viewmodel.UpdateViewModel
 
 @Composable
 fun HomeScreen(
@@ -60,13 +63,24 @@ fun HomeScreen(
     viewModel: NotesViewModel = hiltViewModel(),
     authViewModel: com.white.notepilot.viewmodel.AuthViewModel = hiltViewModel(),
     categoryViewModel: com.white.notepilot.viewmodel.CategoryViewModel = hiltViewModel(),
-    notificationPreferences: com.white.notepilot.data.preferences.NotificationPreferences = hiltViewModel<com.white.notepilot.ui.screens.SettingsViewModel>().notificationPreferences
+    notificationPreferences: com.white.notepilot.data.preferences.NotificationPreferences = hiltViewModel<com.white.notepilot.ui.screens.SettingsViewModel>().notificationPreferences,
+    updateViewModel: UpdateViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
     val currentUser = authViewModel.getCurrentUser()
     val context = LocalContext.current
     val backgroundSyncEnabled by notificationPreferences.backgroundSyncEnabled.collectAsState(initial = true)
+    
+    // Force Update System
+    val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsState()
+    val isForceUpdate by updateViewModel.isForceUpdate.collectAsState()
+    val updateInfo by updateViewModel.updateInfo.collectAsState()
+    
+    // Check for updates when HomeScreen loads
+    LaunchedEffect(Unit) {
+        updateViewModel.checkForUpdates(context)
+    }
     
     // Sync categories when user is logged in
     LaunchedEffect(currentUser?.uid) {
@@ -116,6 +130,24 @@ fun HomeScreen(
         categoryViewModel = categoryViewModel,
         navController = navController
     )
+    
+    // Force Update Bottom Sheet
+    if (showUpdateDialog && updateInfo != null) {
+        ForceUpdateBottomSheet(
+            updateInfo = updateInfo!!,
+            isForceUpdate = isForceUpdate,
+            onUpdateClick = {
+                // User clicked update, keep dialog open until they return
+            },
+            onExitClick = {
+                // Exit the app
+                (context as? Activity)?.finishAffinity()
+            },
+            onDismiss = {
+                updateViewModel.dismissUpdateDialog()
+            }
+        )
+    }
 }
 
 @Composable
@@ -336,7 +368,7 @@ private fun NotesListContent(
     onNoteDelete: (Note) -> Unit
 ) {
     val adPositions = remember(notes.size) {
-        com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(notes.size)
+        AdPositionCalculator.calculateAdPositions(notes.size)
     }
     
     LazyColumn(
@@ -360,7 +392,7 @@ private fun NotesListContent(
             )
             
             if (adPositions.contains(index + 1)) {
-                com.white.notepilot.ads.NativeAdView()
+                NativeAdView()
             }
         }
     }

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,8 +68,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.white.notepilot.R
-import com.white.notepilot.ads.AdPositionCalculator
-import com.white.notepilot.ads.NativeAdView
+import com.white.notepilot.ui.components.ads.AdPositionCalculator
+import com.white.notepilot.ui.components.ads.NativeAdView
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.ui.components.CustomTopBar
 import com.white.notepilot.ui.theme.Blue
@@ -193,7 +192,7 @@ private fun CreateEditTab(
                 )
 
                 val adPositions = remember(unsyncedNotes.size) {
-                    com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(unsyncedNotes.size)
+                    AdPositionCalculator.calculateAdPositions(unsyncedNotes.size)
                 }
 
                 LazyColumn(
@@ -222,7 +221,7 @@ private fun CreateEditTab(
                         )
                         
                         if (adPositions.contains(index + 1)) {
-                            com.white.notepilot.ads.NativeAdView()
+                            NativeAdView()
                         }
                     }
 
@@ -333,7 +332,7 @@ private fun RecycleBinTab(
                 )
 
                 val adPositions = remember(deletedNotes.size) {
-                    com.white.notepilot.ads.AdPositionCalculator.calculateAdPositions(deletedNotes.size)
+                    AdPositionCalculator.calculateAdPositions(deletedNotes.size)
                 }
 
                 LazyColumn(
@@ -375,7 +374,7 @@ private fun RecycleBinTab(
                         )
                         
                         if (adPositions.contains(index + 1)) {
-                            com.white.notepilot.ads.NativeAdView()
+                            NativeAdView()
                         }
                     }
 
