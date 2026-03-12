@@ -100,9 +100,7 @@ fun MainScreen(interstitialAdManager: InterstitialAdManager) {
     val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsState()
     val isForceUpdate by updateViewModel.isForceUpdate.collectAsState()
     val updateInfo by updateViewModel.updateInfo.collectAsState()
-    
-    // Update check moved to HomeScreen
-    
+
     val shouldShowInterstitial by NavigationTracker.shouldShowInterstitial.collectAsState()
     val isAdReady by interstitialAdManager.isAdReady.collectAsState()
     

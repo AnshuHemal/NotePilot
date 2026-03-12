@@ -106,3 +106,63 @@ fun CustomPopupDialog(
         }
     }
 }
+
+@Composable
+fun SingleButtonDialog(
+    message: String,
+    buttonText: String,
+    onButtonClick: () -> Unit,
+    icon: @Composable (() -> Unit)? = null
+) {
+    Dialog(onDismissRequest = { /* Non-dismissible */ }) {
+        Card(
+            shape = RoundedCornerShape(Dimens.PaddingLarge),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(Dimens.PaddingLarge),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (icon != null) {
+                    icon()
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = stringResource(R.string.info),
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(Dimens.PaddingMedium))
+                
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(Dimens.PaddingExtraLarge))
+                
+                Button(
+                    onClick = onButtonClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
+                    ),
+                    shape = RoundedCornerShape(Dimens.PaddingSmall)
+                ) {
+                    Text(
+                        text = buttonText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = Dimens.PaddingSmall)
+                    )
+                }
+            }
+        }
+    }
+}

@@ -5,6 +5,7 @@ import com.white.notepilot.ui.components.ads.RewardedAdManager
 import com.white.notepilot.data.repository.FeedbackRepository
 import com.white.notepilot.data.repository.FirebaseRepository
 import com.white.notepilot.data.repository.RewardsRepository
+import com.white.notepilot.data.repository.SubscriptionRepository
 import com.white.notepilot.data.repository.UpdateRepository
 import dagger.Module
 import dagger.Provides
@@ -44,5 +45,14 @@ object RepositoryModule {
     @Singleton
     fun provideRewardedAdManager(): RewardedAdManager {
         return RewardedAdManager()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSubscriptionRepository(
+        firestore: FirebaseFirestore,
+        rewardsRepository: RewardsRepository
+    ): SubscriptionRepository {
+        return SubscriptionRepository(firestore, rewardsRepository)
     }
 }

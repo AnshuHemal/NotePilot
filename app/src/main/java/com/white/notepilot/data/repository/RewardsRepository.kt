@@ -287,4 +287,28 @@ class RewardsRepository @Inject constructor(
         val earnedCoins = hourlyDistribution.take(adsWatched).sum()
         return totalCoins - earnedCoins
     }
+    
+    suspend fun deductCoins(userId: String, amount: Int): Boolean {
+        return try {
+            val userRewards = getUserRewards(userId) ?: return false
+            
+            if (userRewards.totalCoins < amount) {
+                return false
+            }
+            
+            val updatedRewards = userRewards.copy(
+                totalCoins = userRewards.totalCoins - amount
+            )
+            
+            firestore.collection(REWARDS_COLLECTION)
+                .document(userId)
+                .set(updatedRewards)
+                .await()
+            
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deducting coins", e)
+            false
+        }
+    }
 }

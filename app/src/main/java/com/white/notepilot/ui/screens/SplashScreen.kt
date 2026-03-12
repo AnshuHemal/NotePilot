@@ -47,6 +47,7 @@ fun SplashScreen(
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(Unit) {
+
         alpha.animateTo(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 1000)
@@ -69,6 +70,7 @@ fun SplashScreen(
                 popUpTo(Routes.Splash.route) { inclusive = true }
             }
         }
+
     }
 
     Surface(
