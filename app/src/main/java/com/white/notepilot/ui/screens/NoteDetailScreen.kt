@@ -1,5 +1,6 @@
 package com.white.notepilot.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,19 +43,25 @@ import com.mohamedrejeb.richeditor.ui.material3.RichText
 import com.white.notepilot.R
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.data.model.NoteImage
+import com.white.notepilot.ui.components.AiSummaryCard
 import com.white.notepilot.ui.components.CategoryChip
 import com.white.notepilot.ui.components.CustomTopBar
 import com.white.notepilot.ui.components.ImageAttachmentRow
 import com.white.notepilot.ui.components.ImageViewerDialog
+import com.white.notepilot.ui.components.QRCodeDialog
 import com.white.notepilot.ui.components.ShareBottomSheet
+import com.white.notepilot.ui.state.AiSummaryState
+import com.white.notepilot.viewmodel.AiSummaryViewModel
+import com.white.notepilot.viewmodel.AuthViewModel
 import com.white.notepilot.ui.events.NotesEvent
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.utils.ColorUtils
+import com.white.notepilot.utils.QRCodeHelper
 import com.white.notepilot.utils.ShareHelper
-import com.white.notepilot.viewmodel.AuthViewModel
 import com.white.notepilot.viewmodel.CategoryViewModel
 import com.white.notepilot.viewmodel.NotesViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun NoteDetailScreen(
@@ -91,7 +99,9 @@ private fun NoteDetailScreenContent(
     noteImages: List<NoteImage>,
     categoryViewModel: CategoryViewModel,
     navController: NavHostController,
-    onSaveNote: (Note) -> Unit
+    onSaveNote: (Note) -> Unit,
+    viewModel: NotesViewModel = hiltViewModel(),
+    aiSummaryViewModel: AiSummaryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val richTextState = rememberRichTextState()
@@ -99,6 +109,10 @@ private fun NoteDetailScreenContent(
     val codeStrokeColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     var showShareBottomSheet by remember { mutableStateOf(false) }
     var imageToView by remember { mutableStateOf<NoteImage?>(null) }
+    
+    var showQRCodeDialog by remember { mutableStateOf(false) }
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val scope = rememberCoroutineScope()
     
     val categories by remember(noteId) {
         categoryViewModel.getCategoriesForNote(noteId)
@@ -125,7 +139,13 @@ private fun NoteDetailScreenContent(
         richTextState.config.codeSpanBackgroundColor = codeBackgroundColor
         richTextState.config.codeSpanStrokeColor = codeStrokeColor
     }
-    
+
+    // Reset AI summary when navigating to a different note
+    LaunchedEffect(noteId) {
+        aiSummaryViewModel.reset()
+    }
+
+    val aiSummaryState by aiSummaryViewModel.summaryState.collectAsState()    
     Scaffold(
         containerColor = backgroundColor,
         topBar = {
@@ -235,6 +255,20 @@ private fun NoteDetailScreenContent(
                 )
             }
 
+            // AI Summary Card — collapsible, sits between metadata and content
+            AiSummaryCard(
+                summaryState = aiSummaryState,
+                noteBackgroundColor = backgroundColor,
+                onSummarizeClick = {
+                    aiSummaryViewModel.summarize(
+                        title = note.title,
+                        plainTextContent = richTextState.annotatedString.text
+                    )
+                },
+                onDismiss = { aiSummaryViewModel.reset() },
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
             RichText(
                 state = richTextState,
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -264,7 +298,34 @@ private fun NoteDetailScreenContent(
                 },
                 onShareAsPdf = {
                     ShareHelper.shareAsPdf(context, note)
+                },
+                onShareAsQRCode = {
+                    scope.launch {
+                        val categoryNames = categories.joinToString(", ") { it.name }
+                        val passwordHash = if (note.isLocked) {
+                            val notePassword = viewModel.getPasswordHash(note.id)
+                            notePassword ?: ""
+                        } else ""
+                        
+                        val qrContent = QRCodeHelper.encodeNoteToQR(
+                            title = note.title,
+                            htmlContent = note.content,
+                            categories = categoryNames,
+                            passwordHash = passwordHash,
+                            isLocked = note.isLocked
+                        )
+                        qrBitmap = QRCodeHelper.generateQRCode(qrContent)
+                        showQRCodeDialog = true
+                    }
                 }
+            )
+        }
+        
+        if (showQRCodeDialog) {
+            QRCodeDialog(
+                qrBitmap = qrBitmap,
+                noteTitle = note.title,
+                onDismiss = { showQRCodeDialog = false }
             )
         }
     }

@@ -20,5 +20,9 @@ data class Note(
     @ColumnInfo("is_synced")
     val isSynced: Boolean = false,
     @ColumnInfo("is_deleted")
-    val isDeleted : Boolean = false
+    val isDeleted : Boolean = false,
+    @ColumnInfo("is_pinned")
+    val isPinned: Boolean = false,
+    @ColumnInfo("is_locked")
+    val isLocked: Boolean = false
 )

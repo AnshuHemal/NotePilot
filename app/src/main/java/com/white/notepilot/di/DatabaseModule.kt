@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.white.notepilot.data.dao.CategoryDao
 import com.white.notepilot.data.dao.NoteDao
 import com.white.notepilot.data.dao.NoteImageDao
+import com.white.notepilot.data.dao.NotePasswordDao
 import com.white.notepilot.data.dao.NotificationDao
 import com.white.notepilot.data.database.NoteDatabase
 import com.white.notepilot.utils.DBConstants
@@ -56,6 +57,12 @@ object DatabaseModule {
     @Singleton
     fun provideNoteImageDao(database: NoteDatabase): NoteImageDao {
         return database.noteImageDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideNotePasswordDao(database: NoteDatabase): NotePasswordDao {
+        return database.notePasswordDao()
     }
     
     @Provides

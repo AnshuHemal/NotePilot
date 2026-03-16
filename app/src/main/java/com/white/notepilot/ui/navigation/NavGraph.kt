@@ -14,8 +14,11 @@ import com.white.notepilot.ui.screens.HomeScreen
 import com.white.notepilot.ui.screens.LoginScreen
 import com.white.notepilot.ui.screens.NoteDetailScreen
 import com.white.notepilot.ui.screens.NotificationsScreen
+import com.white.notepilot.ui.screens.OnboardingScreen
 import com.white.notepilot.ui.screens.OpenSourceLicensesScreen
+import com.white.notepilot.ui.screens.OtpVerificationScreen
 import com.white.notepilot.ui.screens.PrivacyPolicyScreen
+import com.white.notepilot.ui.screens.QRScannerScreen
 import com.white.notepilot.ui.screens.ReportFeedbackScreen
 import com.white.notepilot.ui.screens.SearchNoteScreen
 import com.white.notepilot.ui.screens.SettingsScreen
@@ -89,6 +92,20 @@ fun SetupNavGraph(navController: NavHostController) {
         }
         composable(route = Routes.Subscription.route) {
             SubscriptionScreen(navController = navController)
+        }
+        composable(route = Routes.QRScanner.route) {
+            QRScannerScreen(navController = navController)
+        }
+        composable(route = Routes.Onboarding.route) {
+            OnboardingScreen(navController = navController)
+        }
+        composable(
+            route = Routes.OtpVerification.route,
+            arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber")
+                ?.replace("%2B", "+") ?: ""
+            OtpVerificationScreen(navController = navController, phoneNumber = phoneNumber)
         }
 //        composable(route = Routes.RecycleBin.route) {
 //            RecycleBinScreen(navController = navController)

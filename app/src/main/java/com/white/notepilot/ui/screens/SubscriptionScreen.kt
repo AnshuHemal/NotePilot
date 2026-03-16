@@ -53,6 +53,9 @@ import com.white.notepilot.data.model.SubscriptionPlan
 import com.white.notepilot.ui.components.CustomPopupDialog
 import com.white.notepilot.ui.components.SingleButtonDialog
 import com.white.notepilot.ui.components.CustomTopBar
+import com.white.notepilot.ui.components.skeleton.SubscriptionScreenSkeleton
+import com.white.notepilot.utils.HapticFeedbackHelper
+import com.white.notepilot.utils.rememberHapticFeedback
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.viewmodel.AuthViewModel
 import com.white.notepilot.viewmodel.RewardsViewModel
@@ -76,6 +79,7 @@ fun SubscriptionScreen(
     val selectedPlan by subscriptionViewModel.selectedPlan.collectAsState()
     val subscription by subscriptionViewModel.subscription.collectAsState()
     val currentUser = authViewModel.getCurrentUser()
+    val haptic = rememberHapticFeedback()
     
     LaunchedEffect(Unit) {
         currentUser?.uid?.let { userId ->
@@ -84,7 +88,6 @@ fun SubscriptionScreen(
         }
     }
     
-    // Refresh data when screen becomes visible
     LaunchedEffect(navController.currentBackStackEntry) {
         currentUser?.uid?.let { userId ->
             println("SubscriptionScreen: Refreshing data for user $userId")
@@ -93,13 +96,24 @@ fun SubscriptionScreen(
         }
     }
     
-    // Debug subscription state changes
     LaunchedEffect(subscription, isPremium) {
         println("SubscriptionScreen: Subscription state changed")
         println("SubscriptionScreen: subscription = $subscription")
         println("SubscriptionScreen: isPremium = $isPremium")
         println("SubscriptionScreen: subscriptionType = ${subscription?.subscriptionType}")
         println("SubscriptionScreen: isActive = ${subscription?.isActive}")
+    }
+    
+    LaunchedEffect(showSuccessDialog) {
+        if (showSuccessDialog) {
+            haptic(HapticFeedbackHelper.HapticType.SUCCESS)
+        }
+    }
+    
+    LaunchedEffect(showErrorDialog) {
+        if (showErrorDialog) {
+            haptic(HapticFeedbackHelper.HapticType.ERROR)
+        }
     }
     
     Scaffold(
@@ -140,14 +154,9 @@ fun SubscriptionScreen(
                 }
                 
                 if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    SubscriptionScreenSkeleton(
+                        modifier = Modifier.fillMaxSize()
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),

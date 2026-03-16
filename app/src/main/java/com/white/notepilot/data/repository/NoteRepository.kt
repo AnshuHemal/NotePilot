@@ -196,6 +196,32 @@ class NoteRepository @Inject constructor(
             Result.failure(e)
         }
     }
+    
+    suspend fun toggleNotePinStatus(noteId: Int, isPinned: Boolean): Result<Unit> {
+        return try {
+            noteDao.updateNotePinStatus(noteId, isPinned)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun insertNoteDirectly(note: Note): Long {
+        return try {
+            noteDao.insertNote(note)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            -1L
+        }
+    }
+    
+    suspend fun pinNote(noteId: Int): Result<Unit> {
+        return toggleNotePinStatus(noteId, true)
+    }
+    
+    suspend fun unpinNote(noteId: Int): Result<Unit> {
+        return toggleNotePinStatus(noteId, false)
+    }
 
     suspend fun fetchAndSyncNotesFromFirestore(userId: String): Result<Unit> {
         return try {
@@ -223,6 +249,7 @@ class NoteRepository @Inject constructor(
                             content = noteData["content"] as? String ?: existingNote.content,
                             colorCode = noteData["colorCode"] as? String ?: existingNote.colorCode,
                             timestamp = noteData["timestamp"] as? Long ?: existingNote.timestamp,
+                            isPinned = noteData["is_pinned"] as? Boolean ?: existingNote.isPinned,
                             noteId = firestoreId,
                             isSynced = true
                         )
@@ -232,6 +259,7 @@ class NoteRepository @Inject constructor(
                                 content = noteData["content"] as? String ?: "",
                                 colorCode = noteData["colorCode"] as? String ?: "",
                                 timestamp = noteData["timestamp"] as? Long ?: System.currentTimeMillis(),
+                                isPinned = noteData["is_pinned"] as? Boolean ?: false,
                                 noteId = firestoreId,
                                 isSynced = true
                             )

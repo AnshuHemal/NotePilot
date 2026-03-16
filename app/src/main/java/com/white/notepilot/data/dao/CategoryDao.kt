@@ -99,4 +99,13 @@ interface CategoryDao {
         )
     """)
     suspend fun noteHasCategory(noteId: Int, categoryId: Int): Boolean
+    
+    @Query("SELECT * FROM ${DBConstants.CATEGORY_TABLE} WHERE name = :name LIMIT 1")
+    fun getCategoryByNameSync(name: String): Category?
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertCategorySync(category: Category): Long
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertNoteCategorySync(noteCategory: NoteCategory)
 }

@@ -171,6 +171,24 @@ class CategoryRepository @Inject constructor(
         return categoryDao.getCategoriesForNoteSync(noteId)
     }
     
+    suspend fun getCategoryByNameSync(name: String): Category? {
+        return categoryDao.getCategoryByName(name)
+    }
+    
+    suspend fun insertCategorySync(category: Category): Long {
+        return categoryDao.insertCategory(category)
+    }
+    
+    suspend fun addCategoryToNoteSync(noteId: Int, categoryId: Int) {
+        val noteCategory = NoteCategory(
+            noteFirebaseId = "temp_note_$noteId",
+            categoryFirebaseId = "temp_category_$categoryId",
+            noteLocalId = noteId,
+            categoryLocalId = categoryId
+        )
+        categoryDao.insertNoteCategory(noteCategory)
+    }
+    
     fun getNotesForCategory(categoryId: Int): Flow<List<com.white.notepilot.data.model.Note>> {
         return categoryDao.getNotesForCategory(categoryId)
     }

@@ -2,6 +2,7 @@ package com.white.notepilot.di
 
 import android.content.Context
 import com.white.notepilot.data.preferences.NotificationPreferences
+import com.white.notepilot.data.preferences.OnboardingPreferences
 import com.white.notepilot.data.preferences.ThemePreferences
 import dagger.Module
 import dagger.Provides
@@ -28,5 +29,13 @@ object PreferencesModule {
         @ApplicationContext context: Context
     ): NotificationPreferences {
         return NotificationPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardingPreferences(
+        @ApplicationContext context: Context
+    ): OnboardingPreferences {
+        return OnboardingPreferences(context)
     }
 }

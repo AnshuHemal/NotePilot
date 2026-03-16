@@ -70,6 +70,7 @@ import androidx.navigation.compose.rememberNavController
 import com.white.notepilot.R
 import com.white.notepilot.ui.components.ads.AdPositionCalculator
 import com.white.notepilot.ui.components.ads.NativeAdView
+import com.white.notepilot.ui.components.skeleton.UnsyncedNotesListSkeleton
 import com.white.notepilot.data.model.Note
 import com.white.notepilot.ui.components.CustomTopBar
 import com.white.notepilot.ui.theme.Blue
@@ -146,6 +147,7 @@ private fun CreateEditTab(
     authViewModel: AuthViewModel
 ) {
     var unsyncedNotes by remember { mutableStateOf<List<Note>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
     val selectedNotes = remember { mutableStateMapOf<Int, Boolean>() }
     val syncingNotes = remember { mutableStateMapOf<Int, Boolean>() }
     val syncedNotes = remember { mutableStateMapOf<Int, Boolean>() }
@@ -154,10 +156,12 @@ private fun CreateEditTab(
     val currentUser = authViewModel.getCurrentUser()
 
     LaunchedEffect(Unit) {
+        isLoading = true
         viewModel.getUnsyncedNotesCount { _ ->
             scope.launch {
                 viewModel.getUnsyncedNotesList { notes ->
                     unsyncedNotes = notes
+                    isLoading = false
                 }
             }
         }
@@ -168,115 +172,138 @@ private fun CreateEditTab(
         unsyncedNotes.isNotEmpty() && selectedNotes.size == unsyncedNotes.size && selectedNotes.all { it.value }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (unsyncedNotes.isEmpty()) {
-            EmptyStateContent(
-                icon = R.drawable.check,
-                title = stringResource(R.string.all_notes_synced),
-                message = stringResource(R.string.all_your_notes_are_backed_up_to_the_cloud)
-            )
-        } else {
-            Column(modifier = Modifier.fillMaxSize()) {
-                SelectAllHeader(
-                    allSelected = allSelected,
-                    selectedCount = selectedCount,
-                    totalCount = unsyncedNotes.size,
-                    onSelectAllClick = {
-                        if (allSelected) {
-                            selectedNotes.clear()
-                        } else {
-                            unsyncedNotes.forEach { note ->
-                                selectedNotes[note.id] = true
-                            }
-                        }
-                    }
-                )
-
-                val adPositions = remember(unsyncedNotes.size) {
-                    AdPositionCalculator.calculateAdPositions(unsyncedNotes.size)
-                }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(
-                        horizontal = Dimens.PaddingMedium,
-                        vertical = Dimens.PaddingSmall
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)
-                ) {
+        when {
+            isLoading -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SelectAllHeader(
+                        allSelected = false,
+                        selectedCount = 0,
+                        totalCount = 0,
+                        onSelectAllClick = {}
+                    )
                     
-                    itemsIndexed(
-                        items = unsyncedNotes,
-                        key = { _, note -> note.id }
-                    ) { index, note ->
-                        UnsyncedNoteItem(
-                            note = note,
-                            isSelected = selectedNotes[note.id] == true,
-                            isSyncing = syncingNotes[note.id] == true,
-                            isSynced = syncedNotes[note.id] == true,
-                            onSelectionChange = { selected ->
-                                selectedNotes[note.id] = selected
-                            }
-                        )
-                        
-                        if (adPositions.contains(index + 1)) {
-                            NativeAdView()
-                        }
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
+                    UnsyncedNotesListSkeleton(
+                        itemCount = 5,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                horizontal = Dimens.PaddingMedium,
+                                vertical = Dimens.PaddingSmall
+                            )
+                    )
                 }
             }
+            unsyncedNotes.isEmpty() -> {
+                EmptyStateContent(
+                    icon = R.drawable.check,
+                    title = stringResource(R.string.all_notes_synced),
+                    message = stringResource(R.string.all_your_notes_are_backed_up_to_the_cloud)
+                )
+            }
+            else -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SelectAllHeader(
+                        allSelected = allSelected,
+                        selectedCount = selectedCount,
+                        totalCount = unsyncedNotes.size,
+                        onSelectAllClick = {
+                            if (allSelected) {
+                                selectedNotes.clear()
+                            } else {
+                                unsyncedNotes.forEach { note ->
+                                    selectedNotes[note.id] = true
+                                }
+                            }
+                        }
+                    )
 
-            AnimatedVisibility(
-                visible = selectedCount > 0,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp)
-            ) {
-                SyncButton(
-                    selectedCount = selectedCount,
-                    isSyncing = isSyncing,
-                    buttonText = stringResource(R.string.sync),
-                    onClick = {
-                        isSyncing = true
-                        scope.launch {
-                            val notesToSync = unsyncedNotes.filter { selectedNotes[it.id] == true }
+                    val adPositions = remember(unsyncedNotes.size) {
+                        AdPositionCalculator.calculateAdPositions(unsyncedNotes.size)
+                    }
 
-                            notesToSync.forEach { note ->
-                                syncingNotes[note.id] = true
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentPadding = PaddingValues(
+                            horizontal = Dimens.PaddingMedium,
+                            vertical = Dimens.PaddingSmall
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)
+                    ) {
+                        
+                        itemsIndexed(
+                            items = unsyncedNotes,
+                            key = { _, note -> note.id }
+                        ) { index, note ->
+                            UnsyncedNoteItem(
+                                note = note,
+                                isSelected = selectedNotes[note.id] == true,
+                                isSyncing = syncingNotes[note.id] == true,
+                                isSynced = syncedNotes[note.id] == true,
+                                onSelectionChange = { selected ->
+                                    selectedNotes[note.id] = selected
+                                }
+                            )
+                            
+                            if (adPositions.contains(index + 1)) {
+                                NativeAdView()
+                            }
+                        }
 
-                                currentUser?.uid?.let { userId ->
-                                    viewModel.forceSyncNote(note, userId) { success ->
-                                        scope.launch {
-                                            delay(500)
-                                            syncingNotes[note.id] = false
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
+                    }
+                }
 
-                                            if (success) {
-                                                syncedNotes[note.id] = true
-                                                delay(1000)
+                AnimatedVisibility(
+                    visible = selectedCount > 0,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp)
+                ) {
+                    SyncButton(
+                        selectedCount = selectedCount,
+                        isSyncing = isSyncing,
+                        buttonText = stringResource(R.string.sync),
+                        onClick = {
+                            isSyncing = true
+                            scope.launch {
+                                val notesToSync = unsyncedNotes.filter { selectedNotes[it.id] == true }
 
-                                                unsyncedNotes =
-                                                    unsyncedNotes.filter { it.id != note.id }
-                                                selectedNotes.remove(note.id)
-                                                syncedNotes.remove(note.id)
+                                notesToSync.forEach { note ->
+                                    syncingNotes[note.id] = true
+
+                                    currentUser?.uid?.let { userId ->
+                                        viewModel.forceSyncNote(note, userId) { success ->
+                                            scope.launch {
+                                                delay(500)
+                                                syncingNotes[note.id] = false
+
+                                                if (success) {
+                                                    syncedNotes[note.id] = true
+                                                    delay(1000)
+
+                                                    unsyncedNotes =
+                                                        unsyncedNotes.filter { it.id != note.id }
+                                                    selectedNotes.remove(note.id)
+                                                    syncedNotes.remove(note.id)
+                                                }
                                             }
                                         }
                                     }
+
+                                    delay(300)
                                 }
 
-                                delay(300)
+                                isSyncing = false
                             }
-
-                            isSyncing = false
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -288,6 +315,7 @@ private fun RecycleBinTab(
     authViewModel: AuthViewModel
 ) {
     var deletedNotes by remember { mutableStateOf<List<Note>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
     val selectedNotes = remember { mutableStateMapOf<Int, Boolean>() }
     val deletingNotes = remember { mutableStateMapOf<Int, Boolean>() }
     val deletedNotesSuccess = remember { mutableStateMapOf<Int, Boolean>() }
@@ -296,9 +324,11 @@ private fun RecycleBinTab(
     val currentUser = authViewModel.getCurrentUser()
 
     LaunchedEffect(Unit) {
+        isLoading = true
         scope.launch {
             viewModel.getUnsyncedDeletedNotesList { notes ->
                 deletedNotes = notes
+                isLoading = false
             }
         }
     }
@@ -308,127 +338,147 @@ private fun RecycleBinTab(
         deletedNotes.isNotEmpty() && selectedNotes.size == deletedNotes.size && selectedNotes.all { it.value }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (deletedNotes.isEmpty()) {
-            EmptyStateContent(
-                icon = R.drawable.delete,
-                title = stringResource(R.string.recycle_bin_empty),
-                message = "Deleted notes will appear here.\nYou can restore or permanently delete them."
-            )
-        } else {
-            Column(modifier = Modifier.fillMaxSize()) {
-                SelectAllHeader(
-                    allSelected = allSelected,
-                    selectedCount = selectedCount,
-                    totalCount = deletedNotes.size,
-                    onSelectAllClick = {
-                        if (allSelected) {
-                            selectedNotes.clear()
-                        } else {
-                            deletedNotes.forEach { note ->
-                                selectedNotes[note.id] = true
-                            }
-                        }
-                    }
-                )
-
-                val adPositions = remember(deletedNotes.size) {
-                    AdPositionCalculator.calculateAdPositions(deletedNotes.size)
-                }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 8.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
+        when {
+            isLoading -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SelectAllHeader(
+                        allSelected = false,
+                        selectedCount = 0,
+                        totalCount = 0,
+                        onSelectAllClick = {}
+                    )
                     
-                    itemsIndexed(
-                        items = deletedNotes,
-                        key = { _, note -> note.id }
-                    ) { index, note ->
-                        RecycleBinNoteItem(
-                            note = note,
-                            isSelected = selectedNotes[note.id] == true,
-                            isDeleting = deletingNotes[note.id] == true,
-                            isDeleted = deletedNotesSuccess[note.id] == true,
-                            onSelectionChange = { selected ->
-                                selectedNotes[note.id] = selected
-                            },
-                            onRestoreClick = {
-                                scope.launch {
-                                    viewModel.restoreDeletedNote(note) { success ->
-                                        if (success) {
-                                            scope.launch {
-                                                deletedNotes =
-                                                    deletedNotes.filter { it.id != note.id }
-                                                selectedNotes.remove(note.id)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                        
-                        if (adPositions.contains(index + 1)) {
-                            NativeAdView()
-                        }
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
+                    UnsyncedNotesListSkeleton(
+                        itemCount = 5,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
             }
+            deletedNotes.isEmpty() -> {
+                EmptyStateContent(
+                    icon = R.drawable.delete,
+                    title = stringResource(R.string.recycle_bin_empty),
+                    message = "Deleted notes will appear here.\nYou can restore or permanently delete them."
+                )
+            }
+            else -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SelectAllHeader(
+                        allSelected = allSelected,
+                        selectedCount = selectedCount,
+                        totalCount = deletedNotes.size,
+                        onSelectAllClick = {
+                            if (allSelected) {
+                                selectedNotes.clear()
+                            } else {
+                                deletedNotes.forEach { note ->
+                                    selectedNotes[note.id] = true
+                                }
+                            }
+                        }
+                    )
 
-            AnimatedVisibility(
-                visible = selectedCount > 0,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-            ) {
-                DeletePermanentlyButton(
-                    selectedCount = selectedCount,
-                    isDeleting = isDeleting,
-                    onClick = {
-                        isDeleting = true
-                        scope.launch {
-                            val notesToDelete = deletedNotes.filter { selectedNotes[it.id] == true }
+                    val adPositions = remember(deletedNotes.size) {
+                        AdPositionCalculator.calculateAdPositions(deletedNotes.size)
+                    }
 
-                            notesToDelete.forEach { note ->
-                                deletingNotes[note.id] = true
-
-                                currentUser?.uid?.let { userId ->
-                                    viewModel.forceSyncDeletedNote(note, userId) { success ->
-                                        scope.launch {
-                                            delay(500)
-                                            deletingNotes[note.id] = false
-
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 8.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        
+                        itemsIndexed(
+                            items = deletedNotes,
+                            key = { _, note -> note.id }
+                        ) { index, note ->
+                            RecycleBinNoteItem(
+                                note = note,
+                                isSelected = selectedNotes[note.id] == true,
+                                isDeleting = deletingNotes[note.id] == true,
+                                isDeleted = deletedNotesSuccess[note.id] == true,
+                                onSelectionChange = { selected ->
+                                    selectedNotes[note.id] = selected
+                                },
+                                onRestoreClick = {
+                                    scope.launch {
+                                        viewModel.restoreDeletedNote(note) { success ->
                                             if (success) {
-                                                deletedNotesSuccess[note.id] = true
-                                                delay(1000)
-
-                                                deletedNotes =
-                                                    deletedNotes.filter { it.id != note.id }
-                                                selectedNotes.remove(note.id)
-                                                deletedNotesSuccess.remove(note.id)
+                                                scope.launch {
+                                                    deletedNotes =
+                                                        deletedNotes.filter { it.id != note.id }
+                                                    selectedNotes.remove(note.id)
+                                                }
                                             }
                                         }
                                     }
                                 }
-
-                                delay(300)
+                            )
+                            
+                            if (adPositions.contains(index + 1)) {
+                                NativeAdView()
                             }
+                        }
 
-                            isDeleting = false
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
-                )
+                }
+
+                AnimatedVisibility(
+                    visible = selectedCount > 0,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                ) {
+                    DeletePermanentlyButton(
+                        selectedCount = selectedCount,
+                        isDeleting = isDeleting,
+                        onClick = {
+                            isDeleting = true
+                            scope.launch {
+                                val notesToDelete = deletedNotes.filter { selectedNotes[it.id] == true }
+
+                                notesToDelete.forEach { note ->
+                                    deletingNotes[note.id] = true
+
+                                    currentUser?.uid?.let { userId ->
+                                        viewModel.forceSyncDeletedNote(note, userId) { success ->
+                                            scope.launch {
+                                                delay(500)
+                                                deletingNotes[note.id] = false
+
+                                                if (success) {
+                                                    deletedNotesSuccess[note.id] = true
+                                                    delay(1000)
+
+                                                    deletedNotes =
+                                                        deletedNotes.filter { it.id != note.id }
+                                                    selectedNotes.remove(note.id)
+                                                    deletedNotesSuccess.remove(note.id)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    delay(300)
+                                }
+
+                                isDeleting = false
+                            }
+                        }
+                    )
+                }
             }
         }
     }

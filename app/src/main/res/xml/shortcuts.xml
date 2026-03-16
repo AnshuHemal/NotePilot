@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <shortcut
+        android:shortcutId="new_note"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_new_note"
+        android:shortcutLongLabel="@string/shortcut_new_note_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.white.notepilot"
+            android:targetClass="com.white.notepilot.MainActivity">
+            <extra android:name="shortcut_action" android:value="new_note" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+    
+    <shortcut
+        android:shortcutId="search_notes"
+        android:enabled="true"
+        android:icon="@drawable/search"
+        android:shortcutShortLabel="@string/shortcut_search"
+        android:shortcutLongLabel="@string/shortcut_search_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.white.notepilot"
+            android:targetClass="com.white.notepilot.MainActivity">
+            <extra android:name="shortcut_action" android:value="search_notes" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+    
+    <shortcut
+        android:shortcutId="voice_note"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_voice_note"
+        android:shortcutLongLabel="@string/shortcut_voice_note_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.white.notepilot"
+            android:targetClass="com.white.notepilot.MainActivity">
+            <extra android:name="shortcut_action" android:value="voice_note" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+    
+</shortcuts>

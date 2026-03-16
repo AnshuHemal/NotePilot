@@ -25,6 +25,7 @@ class FirebaseRepository @Inject constructor(
                 FirebaseConstants.FIELD_TIMESTAMP to note.timestamp,
                 FirebaseConstants.FIELD_LOCAL_ID to note.id,
                 FirebaseConstants.FIELD_USER_ID to userId,
+                "is_pinned" to note.isPinned
             )
 
             val docRef = if (firestoreId != null) {
@@ -215,6 +216,67 @@ class FirebaseRepository @Inject constructor(
                 .await()
             
             Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun syncNotePasswordToFirestore(
+        noteFirebaseId: String,
+        userId: String,
+        passwordHash: String
+    ): Result<Unit> {
+        return try {
+            val passwordData = hashMapOf(
+                "password_hash" to passwordHash,
+                "created_at" to System.currentTimeMillis()
+            )
+            
+            getUserNotesCollection(userId)
+                .document(noteFirebaseId)
+                .collection("password")
+                .document("lock")
+                .set(passwordData)
+                .await()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun fetchNotePasswordFromFirestore(
+        noteFirebaseId: String,
+        userId: String
+    ): Result<String?> {
+        return try {
+            val doc = getUserNotesCollection(userId)
+                .document(noteFirebaseId)
+                .collection("password")
+                .document("lock")
+                .get()
+                .await()
+            
+            val passwordHash = doc.getString("password_hash")
+            Result.success(passwordHash)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun removeNotePasswordFromFirestore(
+        noteFirebaseId: String,
+        userId: String
+    ): Result<Unit> {
+        return try {
+            getUserNotesCollection(userId)
+                .document(noteFirebaseId)
+                .collection("password")
+                .document("lock")
+                .delete()
+                .await()
+            
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

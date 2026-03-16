@@ -12,4 +12,6 @@ sealed class NotesEvent {
     data class DeleteNote(val note: Note, val userId: String) : NotesEvent()
     data class DeleteAllNotes(val userId: String) : NotesEvent()
     data class GetNoteById(val noteId: Int) : NotesEvent()
+    data class TogglePinStatus(val note: Note) : NotesEvent()
+    data class RefreshNotes(val userId: String) : NotesEvent()
 }

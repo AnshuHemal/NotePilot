@@ -2,6 +2,8 @@ package com.white.notepilot.di
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.white.notepilot.ui.components.ads.RewardedAdManager
+import com.white.notepilot.data.repository.AiSearchRepository
+import com.white.notepilot.data.repository.AiSummaryRepository
 import com.white.notepilot.data.repository.FeedbackRepository
 import com.white.notepilot.data.repository.FirebaseRepository
 import com.white.notepilot.data.repository.RewardsRepository
@@ -17,6 +19,18 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
     
+    @Provides
+    @Singleton
+    fun provideAiSearchRepository(): AiSearchRepository {
+        return AiSearchRepository()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAiSummaryRepository(): AiSummaryRepository {
+        return AiSummaryRepository()
+    }
+
     @Provides
     @Singleton
     fun provideFeedbackRepository(

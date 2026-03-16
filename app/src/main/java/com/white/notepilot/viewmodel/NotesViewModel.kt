@@ -12,6 +12,7 @@ import com.white.notepilot.ui.events.NotesEvent
 import com.white.notepilot.ui.state.NotesUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ import javax.inject.Inject
 class NotesViewModel @Inject constructor(
     private val repository: NoteRepository,
     private val categoryRepository: com.white.notepilot.data.repository.CategoryRepository,
-    val imageRepository: ImageRepository
+    val imageRepository: ImageRepository,
+    private val passwordRepository: com.white.notepilot.data.repository.NotePasswordRepository
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(SortOrder.DESCENDING)
@@ -38,8 +40,10 @@ class NotesViewModel @Inject constructor(
     private val _isSyncing = MutableStateFlow(false)
     private val _syncError = MutableStateFlow<String?>(null)
     private val _syncMessage = MutableStateFlow<String?>(null)
+    private val _isRefreshing = MutableStateFlow(false)
     
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     val syncMessage: StateFlow<String?> = _syncMessage.asStateFlow()
 
     private val notesFlow = repository.getAllNotes()
@@ -84,8 +88,12 @@ class NotesViewModel @Inject constructor(
         }
 
         when (order) {
-            SortOrder.ASCENDING -> categoryFiltered.sortedBy { it.timestamp }
-            SortOrder.DESCENDING -> categoryFiltered.sortedByDescending { it.timestamp }
+            SortOrder.ASCENDING -> categoryFiltered.sortedWith(
+                compareByDescending<Note> { it.isPinned }.thenBy { it.timestamp }
+            )
+            SortOrder.DESCENDING -> categoryFiltered.sortedWith(
+                compareByDescending<Note> { it.isPinned }.thenByDescending { it.timestamp }
+            )
         }
     }.stateIn(
         scope = viewModelScope,
@@ -122,8 +130,6 @@ class NotesViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = NotesUiState(isLoading = true)
     )
-
-
 
     fun onEvent(event: NotesEvent) {
         when (event) {
@@ -189,6 +195,22 @@ class NotesViewModel @Inject constructor(
                     }
                 }
             }
+
+            is NotesEvent.TogglePinStatus -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    repository.toggleNotePinStatus(event.note.id, !event.note.isPinned)
+                }
+            }
+
+            is NotesEvent.RefreshNotes -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    _isRefreshing.value = true
+                    repository.fetchAndSyncNotesFromFirestore(event.userId)
+                    repository.syncUnsyncedNotesToFirestore(event.userId)
+                    delay(1000) // Visual feedback
+                    _isRefreshing.value = false
+                }
+            }
         }
     }
 
@@ -215,18 +237,12 @@ class NotesViewModel @Inject constructor(
         return withContext(Dispatchers.IO) {
             var syncedCount = 0
             imageUris.forEach { uri ->
-                android.util.Log.d("NotesViewModel", "Saving image for note $noteId")
                 val result = imageRepository.saveImageForNote(noteId, noteFirebaseId, uri)
                 if (result.isSuccess) {
                     val image = result.getOrNull()
                     if (image?.isSynced == true) {
                         syncedCount++
-                        android.util.Log.d("NotesViewModel", "Image synced successfully")
-                    } else {
-                        android.util.Log.d("NotesViewModel", "Image saved locally, sync pending")
                     }
-                } else {
-                    android.util.Log.e("NotesViewModel", "Failed to save image: ${result.exceptionOrNull()?.message}")
                 }
             }
             val images = imageRepository.getImagesForNoteSync(noteId)
@@ -245,7 +261,6 @@ class NotesViewModel @Inject constructor(
     fun deleteImage(image: NoteImage) {
         viewModelScope.launch(Dispatchers.IO) {
             imageRepository.deleteImage(image)
-            // Refresh images in UI state
             val images = imageRepository.getImagesForNoteSync(image.noteId)
             _noteImages.value = images
         }
@@ -262,11 +277,8 @@ class NotesViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _isSyncing.value = true
             _syncError.value = null
-            
             val result = repository.fetchAndSyncNotesFromFirestore(userId)
-            
             repository.cleanupDuplicates()
-            
             _isSyncing.value = false
             if (result.isFailure) {
                 _syncError.value = result.exceptionOrNull()?.message
@@ -278,9 +290,7 @@ class NotesViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _isSyncing.value = true
             _syncError.value = null
-            
             val result = repository.syncUnsyncedNotesToFirestore(userId)
-            
             _isSyncing.value = false
             if (result.isSuccess) {
                 val syncedCount = result.getOrNull() ?: 0
@@ -337,5 +347,164 @@ class NotesViewModel @Inject constructor(
             val result = repository.restoreDeletedNote(note)
             callback(result.isSuccess)
         }
+    }
+
+    suspend fun hasPassword(noteId: Int): Boolean {
+        return withContext(Dispatchers.IO) {
+            passwordRepository.hasPassword(noteId)
+        }
+    }
+
+    suspend fun verifyPassword(noteId: Int, password: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            passwordRepository.verifyPasswordForNote(noteId, password)
+        }
+    }
+
+    fun setPassword(noteId: Int, noteFirebaseId: String?, password: String, userId: String, callback: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = passwordRepository.setPasswordForNote(noteId, noteFirebaseId, password, userId, "PASSWORD")
+            callback(result.isSuccess)
+        }
+    }
+    
+    fun setBiometric(noteId: Int, noteFirebaseId: String?, userId: String, callback: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = passwordRepository.setPasswordForNote(noteId, noteFirebaseId, "", userId, "BIOMETRIC")
+            callback(result.isSuccess)
+        }
+    }
+    
+    suspend fun getLockType(noteId: Int): String? {
+        return withContext(Dispatchers.IO) {
+            passwordRepository.getLockType(noteId)
+        }
+    }
+
+    fun removePassword(noteId: Int, noteFirebaseId: String?, userId: String, callback: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = passwordRepository.removePasswordForNote(noteId, noteFirebaseId, userId)
+            callback(result.isSuccess)
+        }
+    }
+
+    suspend fun getPasswordHash(noteId: Int): String? {
+        return withContext(Dispatchers.IO) {
+            passwordRepository.getPasswordHash(noteId)
+        }
+    }
+
+    suspend fun addScannedNote(
+        title: String,
+        htmlContent: String,
+        categories: String,
+        passwordHash: String,
+        isLocked: Boolean
+    ) {
+        withContext(Dispatchers.IO) {
+            try {
+                // Create the note - always create a new note, don't check for duplicates
+                val note = Note(
+                    id = 0,
+                    noteId = null,
+                    title = title,
+                    content = htmlContent,
+                    colorCode = generateRandomColorCode(),
+                    timestamp = System.currentTimeMillis(),
+                    isPinned = false,
+                    isLocked = isLocked,
+                    isSynced = false,
+                    isDeleted = false
+                )
+                
+                // Insert the note directly to avoid duplicate checking
+                val insertedId = repository.insertNoteDirectly(note)
+                val savedNote = note.copy(id = insertedId.toInt())
+                
+                if (insertedId > 0) {
+                    // Handle categories
+                    if (categories.isNotBlank()) {
+                        try {
+                            val categoryList = categories.split(",")
+                                .map { it.trim() }
+                                .filter { it.isNotEmpty() }
+                            
+                            categoryList.forEach { categoryName ->
+                                try {
+                                    // Check if category exists, if not create it
+                                    val existingCategory = categoryRepository.getCategoryByNameSync(categoryName)
+                                    val categoryId = if (existingCategory != null) {
+                                        existingCategory.id
+                                    } else {
+                                        val newCategory = com.white.notepilot.data.model.Category(
+                                            name = categoryName,
+                                            color = generateRandomColorHex()
+                                        )
+                                        categoryRepository.insertCategorySync(newCategory).toInt()
+                                    }
+                                    
+                                    // Link category to note
+                                    categoryRepository.addCategoryToNoteSync(savedNote.id, categoryId)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    // Continue with other categories even if one fails
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Continue even if category processing fails
+                        }
+                    }
+                    
+                    // Handle password if locked
+                    if (isLocked && passwordHash.isNotBlank()) {
+                        try {
+                            passwordRepository.setPasswordHashForNoteAsync(
+                                savedNote.id,
+                                savedNote.noteId,
+                                passwordHash,
+                                ""
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Continue even if password setting fails
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        _syncMessage.value = "Note added to workspace successfully!"
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        _syncError.value = "Failed to save note"
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    _syncError.value = "Failed to add note: ${e.message}"
+                }
+            }
+        }
+    }
+    
+    private fun generateRandomColorHex(): String {
+        val colors = listOf(
+            "#EF5350", "#EC407A", "#AB47BC", "#7E57C2",
+            "#5C6BC0", "#42A5F5", "#29B6F6", "#26C6DA",
+            "#26A69A", "#66BB6A", "#9CCC65", "#D4E157",
+            "#FFEE58", "#FFCA28", "#FF7043", "#8D6E63"
+        )
+        return colors.random()
+    }
+    
+    private fun generateRandomColorCode(): String {
+        val random = java.util.Random()
+        return String.format(
+            "%02X%02X%02X",
+            random.nextInt(256),
+            random.nextInt(256),
+            random.nextInt(256)
+        )
     }
 }

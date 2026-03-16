@@ -1,0 +1,47 @@
+package com.white.notepilot.ui.screens
+
+data class CountryCode(
+    val dialCode: String,
+    val name: String,
+    val flag: String
+)
+
+val countryCodes = listOf(
+    CountryCode("+91", "India", "🇮🇳"),
+    CountryCode("+1", "United States", "🇺🇸"),
+    CountryCode("+44", "United Kingdom", "🇬🇧"),
+    CountryCode("+61", "Australia", "🇦🇺"),
+    CountryCode("+1", "Canada", "🇨🇦"),
+    CountryCode("+86", "China", "🇨🇳"),
+    CountryCode("+33", "France", "🇫🇷"),
+    CountryCode("+49", "Germany", "🇩🇪"),
+    CountryCode("+852", "Hong Kong", "🇭🇰"),
+    CountryCode("+62", "Indonesia", "🇮🇩"),
+    CountryCode("+353", "Ireland", "🇮🇪"),
+    CountryCode("+972", "Israel", "🇮🇱"),
+    CountryCode("+39", "Italy", "🇮🇹"),
+    CountryCode("+81", "Japan", "🇯🇵"),
+    CountryCode("+60", "Malaysia", "🇲🇾"),
+    CountryCode("+52", "Mexico", "🇲🇽"),
+    CountryCode("+31", "Netherlands", "🇳🇱"),
+    CountryCode("+64", "New Zealand", "🇳🇿"),
+    CountryCode("+234", "Nigeria", "🇳🇬"),
+    CountryCode("+47", "Norway", "🇳🇴"),
+    CountryCode("+92", "Pakistan", "🇵🇰"),
+    CountryCode("+63", "Philippines", "🇵🇭"),
+    CountryCode("+48", "Poland", "🇵🇱"),
+    CountryCode("+7", "Russia", "🇷🇺"),
+    CountryCode("+966", "Saudi Arabia", "🇸🇦"),
+    CountryCode("+65", "Singapore", "🇸🇬"),
+    CountryCode("+27", "South Africa", "🇿🇦"),
+    CountryCode("+82", "South Korea", "🇰🇷"),
+    CountryCode("+34", "Spain", "🇪🇸"),
+    CountryCode("+46", "Sweden", "🇸🇪"),
+    CountryCode("+41", "Switzerland", "🇨🇭"),
+    CountryCode("+886", "Taiwan", "🇹🇼"),
+    CountryCode("+66", "Thailand", "🇹🇭"),
+    CountryCode("+90", "Turkey", "🇹🇷"),
+    CountryCode("+971", "UAE", "🇦🇪"),
+    CountryCode("+380", "Ukraine", "🇺🇦"),
+    CountryCode("+84", "Vietnam", "🇻🇳"),
+)

@@ -58,6 +58,7 @@ import com.white.notepilot.ui.components.AddCategoryDialog
 import com.white.notepilot.ui.components.CustomPopupDialog
 import com.white.notepilot.ui.components.CustomSnackbar
 import com.white.notepilot.ui.components.CustomTopBar
+import com.white.notepilot.ui.components.skeleton.CategoryListSkeleton
 import com.white.notepilot.ui.theme.Blue
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.viewmodel.AuthViewModel
@@ -77,7 +78,13 @@ fun CategoryManagementScreen(
     var showNoInternetDialog by remember { mutableStateOf(false) }
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
+    
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(300)
+        isLoading = false
+    }
     
     fun isInternetAvailable(): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -114,37 +121,49 @@ fun CategoryManagementScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        if (categories.isEmpty()) {
-            EmptyCategoriesContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = Dimens.PaddingLarge),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                
-                items(
-                    items = categories,
-                    key = { it.id }
-                ) { category ->
-                    CategoryItemWithCount(
-                        category = category,
-                        viewModel = viewModel,
-                        onDelete = { categoryToDelete = category }
-                    )
-                }
-                
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
+        when {
+            isLoading -> {
+                CategoryListSkeleton(
+                    itemCount = 5,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = Dimens.PaddingLarge)
+                )
+            }
+            categories.isEmpty() -> {
+                EmptyCategoriesContent(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = Dimens.PaddingLarge),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    
+                    items(
+                        items = categories,
+                        key = { it.id }
+                    ) { category ->
+                        CategoryItemWithCount(
+                            category = category,
+                            viewModel = viewModel,
+                            onDelete = { categoryToDelete = category }
+                        )
+                    }
+                    
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
                 }
             }
         }

@@ -28,8 +28,10 @@ class AuthViewModel @Inject constructor(
     
     private fun checkAuthStatus() {
         val currentUser = authRepository.getCurrentUser()
-        if (currentUser != null) {
-            _authState.value = AuthState.Success(currentUser.uid)
+        _authState.value = if (currentUser != null) {
+            AuthState.Success(currentUser.uid)
+        } else {
+            AuthState.Error("Not logged in")
         }
     }
     

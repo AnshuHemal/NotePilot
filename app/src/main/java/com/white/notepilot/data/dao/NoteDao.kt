@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NoteDao {
     
-    @Query("SELECT * FROM ${DBConstants.TBL_NAME} WHERE is_deleted = 0 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM ${DBConstants.TBL_NAME} WHERE is_deleted = 0 ORDER BY is_pinned DESC, timestamp DESC")
     fun getAllNotes(): Flow<List<Note>>
 
     @Query("SELECT * FROM ${DBConstants.TBL_NAME} WHERE id = :id AND is_deleted = 0")
@@ -34,6 +34,9 @@ interface NoteDao {
     
     @Query("SELECT * FROM ${DBConstants.TBL_NAME} WHERE is_deleted = 1 AND is_synced = 0")
     suspend fun getUnsyncedDeletedNotes(): List<Note>
+    
+    @Query("UPDATE ${DBConstants.TBL_NAME} SET is_pinned = :isPinned WHERE id = :noteId")
+    suspend fun updateNotePinStatus(noteId: Int, isPinned: Boolean)
     
     @Upsert
     suspend fun upsertNote(note: Note)

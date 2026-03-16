@@ -9,6 +9,7 @@ data class NotesUiState(
     val sortOrder: SortOrder = SortOrder.DESCENDING,
     val searchQuery: String = "",
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val isEmpty: Boolean = false,
     val selectedNote: Note? = null,
     val noteImages: List<NoteImage> = emptyList(),

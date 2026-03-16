@@ -35,42 +35,55 @@ import com.white.notepilot.data.auth.AuthState
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.NotesTheme
 import com.white.notepilot.viewmodel.AuthViewModel
+import com.white.notepilot.viewmodel.OnboardingViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun SplashScreen(
     navController: NavHostController,
     authViewModel: AuthViewModel = hiltViewModel(),
-    notesViewModel: com.white.notepilot.viewmodel.NotesViewModel = hiltViewModel()
+    onboardingViewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val alpha = remember { Animatable(0f) }
     val authState by authViewModel.authState.collectAsState()
+    val onboardingCompleted by onboardingViewModel.isCompleted.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(authState, onboardingCompleted) {
+        // Wait until onboarding flag is loaded (non-null)
+        if (onboardingCompleted == null) return@LaunchedEffect
 
-        alpha.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 1000)
-        )
-        delay(2000)
+        alpha.animateTo(targetValue = 1f, animationSpec = tween(durationMillis = 1000))
+        delay(1000)
 
-        if (authState is AuthState.Success) {
-            val userId = (authState as AuthState.Success).userId
-            notesViewModel.syncNotesFromFirestore(userId)
+        // Safety timeout — if still Idle/Loading after 5s, go to Login
+        val resolvedState = withTimeoutOrNull(5_000) {
+            var state = authState
+            while (state == AuthState.Idle || state == AuthState.Loading) {
+                delay(100)
+                state = authState
+            }
+            state
+        } ?: AuthState.Error("Timeout")
 
-            notesViewModel.isSyncing.collect { isSyncing ->
-                if (!isSyncing) {
-                    navController.navigate(Routes.Home.route) {
-                        popUpTo(Routes.Splash.route) { inclusive = true }
-                    }
+        when (resolvedState) {
+            is AuthState.Success -> {
+                // Logged in — check if they've seen onboarding
+                val destination = if (onboardingCompleted == true) Routes.Home.route
+                                  else Routes.Onboarding.route
+                navController.navigate(destination) {
+                    popUpTo(Routes.Splash.route) { inclusive = true }
                 }
             }
-        } else {
-            navController.navigate(Routes.Login.route) {
-                popUpTo(Routes.Splash.route) { inclusive = true }
+            else -> {
+                // Not logged in — show onboarding on first launch, Login on return visits
+                val destination = if (onboardingCompleted == true) Routes.Login.route
+                                  else Routes.Onboarding.route
+                navController.navigate(destination) {
+                    popUpTo(Routes.Splash.route) { inclusive = true }
+                }
             }
         }
-
     }
 
     Surface(

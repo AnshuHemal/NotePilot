@@ -180,6 +180,26 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(32.dp))
             
             Text(
+                text = "Tools",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            SettingSwitchItem(
+                title = "Scan QR Code",
+                description = "Scan a QR code to import a note",
+                checked = false,
+                onCheckedChange = { },
+                isClickable = true,
+                onClick = {
+                    navController.navigate(Routes.QRScanner.route)
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
                 text = "Support & Information",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,

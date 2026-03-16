@@ -2,7 +2,6 @@ package com.white.notepilot.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,7 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.white.notepilot.R
-import com.white.notepilot.ui.theme.Blue
 import com.white.notepilot.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,7 +36,8 @@ fun ShareBottomSheet(
     onDismiss: () -> Unit,
     onShareAsText: () -> Unit,
     onShareAsHtml: () -> Unit,
-    onShareAsPdf: () -> Unit
+    onShareAsPdf: () -> Unit,
+    onShareAsQRCode: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
@@ -95,6 +94,19 @@ fun ShareBottomSheet(
                 iconBackgroundColor = Color(0xFFF44336),
                 onClick = {
                     onShareAsPdf()
+                    onDismiss()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            ShareOption(
+                icon = R.drawable.qr_code,
+                title = "Share as QR Code",
+                description = "Generate a QR code to share note",
+                iconBackgroundColor = Color(0xFF2196F3),
+                onClick = {
+                    onShareAsQRCode()
                     onDismiss()
                 }
             )

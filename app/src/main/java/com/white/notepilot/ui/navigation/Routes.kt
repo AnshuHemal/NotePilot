@@ -24,4 +24,9 @@ sealed class Routes(val route: String) {
     object TermsOfUse : Routes("terms_of_use")
     object OpenSourceLicenses : Routes("open_source_licenses")
     object Subscription : Routes("subscription")
+    object QRScanner : Routes("qr_scanner")
+    object Onboarding : Routes("onboarding")
+    object OtpVerification : Routes("otp_verification/{phoneNumber}") {
+        fun createRoute(phoneNumber: String) = "otp_verification/${phoneNumber.replace("+", "%2B")}"
+    }
 }

@@ -40,7 +40,7 @@
     <string name="app_logo">App Logo</string>
     <string name="capture_your_thoughts">Your Thoughts, On Autopilot.</string>
     <string name="google_web_client_id">289836715820-n4ii18dph7a7vkkmho6s2832dcv0raoa.apps.googleusercontent.com</string>
-    <string name="signing_in">Signing in...</string>
+    <string name="signing_in">Signing in…</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="google_logo_des">Google Logo</string>
     <string name="sign_in_failed_user_is_null">Sign in failed: User is null</string>
@@ -52,7 +52,7 @@
     <string name="all_notes_synced">All Notes Synced</string>
     <string name="all_your_notes_are_backed_up_to_the_cloud">All your notes are backed up to the cloud</string>
     <string name="all_synced">All synced</string>
-    <string name="syncing">Syncing...</string>
+    <string name="syncing">Syncing…</string>
     <string name="synced">Synced</string>
     <string name="select_all">Select All</string>
     <string name="recycle_bin_empty">Recycle Bin Empty</string>
@@ -62,7 +62,7 @@
     <string name="select_date">Select Date</string>
     <string name="filter_by_date">Filter by Date</string>
     <string name="ok">OK</string>
-    <string name="deleting">Deleting...</string>
+    <string name="deleting">Deleting…</string>
     <string name="restore_note">Restore Note</string>
     <string name="deleted">Deleted</string>
     <string name="sync">Sync</string>
@@ -74,4 +74,22 @@
     <string name="native_ad_unit_id">ca-app-pub-3940256099942544/2247696110</string>
     <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
     <string name="rewarded_ad_unit_id">ca-app-pub-3940256099942544/5224354917</string>
+
+    <string name="shortcut_new_note">New Note</string>
+    <string name="shortcut_new_note_long">Create a new note</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_search_long">Search notes</string>
+    <string name="shortcut_voice_note">Voice Note</string>
+    <string name="shortcut_voice_note_long">Create note with voice</string>
+    <string name="shortcut_disabled">Shortcut is disabled</string>
+    
+    <string name="notification_channel_sync_name">Sync Notifications</string>
+    <string name="notification_channel_sync_description">Notifications about note synchronization</string>
+    <string name="notification_channel_reminders_name">Reminders</string>
+    <string name="notification_channel_reminders_description">Note reminders and alerts</string>
+    <string name="notification_channel_updates_name">App Updates</string>
+    <string name="notification_channel_updates_description">Important app updates and announcements</string>
+    <string name="notification_channel_general_name">General</string>
+    <string name="notification_channel_general_description">General notifications</string>
+
 </resources>

@@ -1,11 +1,14 @@
 package com.white.notepilot
 
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -34,7 +38,7 @@ import com.white.notepilot.viewmodel.UpdateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     
     companion object {
         private const val TAG = "MainActivity"
@@ -47,6 +51,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setupPredictiveBackGesture()
+        }
+        
         interstitialAdManager = InterstitialAdManager(this)
         
         NotificationHelper.getFCMToken { token ->
@@ -57,9 +65,21 @@ class MainActivity : ComponentActivity() {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
             
+            val shortcutAction = intent?.getStringExtra("shortcut_action")
+            
             NotesTheme(darkTheme = isDarkMode) {
-                MainScreen(interstitialAdManager = interstitialAdManager)
+                MainScreen(
+                    interstitialAdManager = interstitialAdManager,
+                    shortcutAction = shortcutAction
+                )
             }
+        }
+    }
+    
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun setupPredictiveBackGesture() {
+        onBackPressedDispatcher.addCallback(this) {
+            onBackPressedDispatcher.onBackPressed()
         }
     }
     
@@ -85,12 +105,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(interstitialAdManager: InterstitialAdManager) {
+fun MainScreen(
+    interstitialAdManager: InterstitialAdManager,
+    shortcutAction: String? = null
+) {
     val context = LocalContext.current
     val activity = context as ComponentActivity
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    
+    LaunchedEffect(shortcutAction) {
+        when (shortcutAction) {
+            "new_note" -> navController.navigate(Routes.CreateNote.createRoute())
+            "search_notes" -> navController.navigate(Routes.SearchNote.route)
+            "voice_note" -> navController.navigate(Routes.CreateNote.createRoute())
+        }
+    }
     
     val notificationViewModel: NotificationViewModel = hiltViewModel()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()

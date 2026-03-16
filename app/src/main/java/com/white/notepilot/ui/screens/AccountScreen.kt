@@ -63,6 +63,7 @@ import com.white.notepilot.data.model.SubscriptionType
 import com.white.notepilot.data.model.User
 import com.white.notepilot.ui.components.CustomPopupDialog
 import com.white.notepilot.ui.components.RewardsSection
+import com.white.notepilot.ui.components.skeleton.AccountScreenSkeleton
 import com.white.notepilot.ui.navigation.Routes
 import com.white.notepilot.ui.theme.Dimens
 import com.white.notepilot.ui.theme.LightGray
@@ -129,56 +130,14 @@ fun AccountScreen(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            // Loading State
+            // Loading State with Skeleton
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = Dimens.PaddingLarge)
+                    .verticalScroll(rememberScrollState())
             ) {
-                // Account title
-                Text(
-                    text = "Account",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                
-                // Centered loading content
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        // Loading indicator
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(56.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            strokeWidth = 5.dp
-                        )
-                        
-                        Text(
-                            text = "Loading account data...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        
-                        Text(
-                            text = "Please wait while we fetch your profile, rewards, and subscription details",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                    }
-                }
+                AccountScreenSkeleton()
             }
         }
         
